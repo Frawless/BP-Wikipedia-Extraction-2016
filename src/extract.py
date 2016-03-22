@@ -136,7 +136,7 @@ def extractNames(file, listOfNouns, outputFile, filename):
 
 def createListOfNouns():
   listOfNouns = []
-  file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/list_of_nouns', 'r')
+  file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/list_of_nouns', 'r')
   for line in file:
     listOfNouns.append(line[:-1])
   return listOfNouns

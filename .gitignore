@@ -16,3 +16,4 @@ test/
 *.otd
 *.mg4j
 *.in
+.idea

@@ -55,8 +55,7 @@ if __name__ == "__main__":
   # parse arguments
   parser = argparse.ArgumentParser(description='Wiki extractor argument parser')
   requiredArguments = parser.add_argument_group('required arguments')
-  requiredArguments.add_argument('-s', '--servers', action="store", dest="servers", help='Add path to server list',
-                                 required=True)
+  requiredArguments.add_argument('-s', '--servers', action="store", dest="servers", help='Add path to server list', required=True)
   parser.add_argument('-i', '--input', action="store", dest="input", help='Input file with information for verify')
   results = parser.parse_args()
 
