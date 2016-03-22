@@ -7,14 +7,15 @@ OPTIND=1
 page=""
 servers="/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers.txt"
 pureText=""
+fileName=""
 
 # print help
 show_help(){
-	echo "Usage: $0 -p page [-n]"
+	echo "Usage: $0 -p page -o name [-n]"
 	exit 1
 }
 
-while getopts "h?p:n" opt; do
+while getopts "h?o:p:n" opt; do
     case "$opt" in
     h|\?)
         show_help
@@ -24,14 +25,22 @@ while getopts "h?p:n" opt; do
         ;;
     n)  pureText="yes"
         ;;
+    o)  fileName=$OPTARG
+        ;;
     esac
 done
 
-if [ $pureText == "yes" ];
+if [[ -z $page ]] || [[ -z $fileName ]]
 then
-    parallel-ssh -t 0 -i -h $servers -A "python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/get-page.py $page isSet"
+     show_help
+     exit 1
+fi
+
+if [ "$pureText" == "yes" ];
+then
+    parallel-ssh -t 0 -i -h $servers -A "python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/get-page.py $page $fileName isSet"
 else
-    parallel-ssh -t 0 -i -h $servers -A "python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/get-page.py $page"
+    parallel-ssh -t 0 -i -h $servers -A "python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/get-page.py $page $fileName"
 fi
 
 exit

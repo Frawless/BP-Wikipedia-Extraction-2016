@@ -25,12 +25,13 @@ def getPage(file,page):
 
 if __name__ == "__main__":
   page = sys.argv[1]
+  outputFile = sys.argv[2]
   pureText = False
-  if sys.argv[2]:
+  if sys.argv[3]:
     pureText = True
   extractedPage = ""
   # output file name
-  outputFileName = "/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/" + socket.gethostname() + "-parsed-page.page"
+  outputFileName = "/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/" + outputFile + "-"+socket.gethostname()+"-parsed-page.page"
   # parsing data from servers
   for filename in glob.glob(os.path.join('/mnt/data/indexes/wikipedia/enwiki-20150901/collPart*', '*.mg4j')):
     file = open(filename, 'r')
