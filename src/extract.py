@@ -161,10 +161,10 @@ if __name__ == "__main__":
 
   # TODO - nastavit vyhledávání podle zpracovaného vstupu od uživatele, momentálně funguje obecně jen pro hledání jedné stránky
   # nejprve podle vstupu nastavit co vyhledat a poté stránku zpracovat funkcí findInformation()
-  #for filename in glob.glob(os.path.join('/mnt/data/indexes/wikipedia/enwiki-20150901/collPart*', '*.mg4j')):
-  filename = "/mnt/data/indexes/wikipedia/enwiki-20150901/collPart001/athena1_wiki_00.vert.parsed.tagged.mg4j"
+  for filename in glob.glob(os.path.join('/mnt/data/indexes/wikipedia/enwiki-20150901/collPart*', '*.mg4j')):
+  #filename = "/mnt/data/indexes/wikipedia/enwiki-20150901/collPart001/athena1_wiki_00.vert.parsed.tagged.mg4j"
   # filename = "data.mg4j"
-  if True:
+  #if True:
     file = open(filename, 'r')
     # getInformationFromPage(file,task_list)
     extractNames(file, listOfNouns, outputFile, filename)

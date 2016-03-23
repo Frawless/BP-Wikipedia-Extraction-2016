@@ -27,7 +27,7 @@ if __name__ == "__main__":
   page = sys.argv[1]
   outputFile = sys.argv[2]
   pureText = False
-  if sys.argv[3]:
+  if len(sys.argv) > 3:
     pureText = True
   extractedPage = ""
   # output file name
