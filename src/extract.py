@@ -69,7 +69,7 @@ def getInformationFromPage(file, task_list):
       # extract text
       if len(array) > 0:
         outputTags = clearPage(page)
-        print outputTags
+        #print outputTags
         # print outputText
         if "%%#PAGE Influence" in pageTitle:
           task_list = find.checkInfluencePages(outputTags, array, task_list)
@@ -141,7 +141,6 @@ def createListOfNouns():
     listOfNouns.append(line[:-1])
   return listOfNouns
 
-
 # main
 if __name__ == "__main__":
   input = sys.argv[1]
@@ -159,11 +158,13 @@ if __name__ == "__main__":
   input_list = find.parseInput(input)  # create input_list
   task_list = find.parseList(input_list)  # create task list
 
+  #print listOfNouns
+
   # TODO - nastavit vyhledávání podle zpracovaného vstupu od uživatele, momentálně funguje obecně jen pro hledání jedné stránky
   # nejprve podle vstupu nastavit co vyhledat a poté stránku zpracovat funkcí findInformation()
   for filename in glob.glob(os.path.join('/mnt/data/indexes/wikipedia/enwiki-20150901/collPart*', '*.mg4j')):
   #filename = "/mnt/data/indexes/wikipedia/enwiki-20150901/collPart001/athena1_wiki_00.vert.parsed.tagged.mg4j"
-  # filename = "data.mg4j"
+  #filename = "../data.mg4j"
   #if True:
     file = open(filename, 'r')
     # getInformationFromPage(file,task_list)

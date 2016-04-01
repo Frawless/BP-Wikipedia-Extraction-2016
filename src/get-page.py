@@ -11,43 +11,48 @@ import re
 
 import extract
 
-def getPage(file,page):
+MAX_PAGES = 3
+
+def getPage(file,page,extractedPages):
   parsed = False
   output = ""
   for line in file:
       if "%%#PAGE" in line and page in line:
+        pageName = re.search('%%#PAGE\s(.*)\shttp',line).group(1)
         parsed = True
         output += line
       elif "%%#PAGE" in line and parsed:
-        return output
-      elif "%%#DOC" not in line and "%%#PAR" not in line and parsed:
+        outputFile = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/List_of/' + pageName.replace(' ','_') + '-'+socket.gethostname()+'-parsed-page.page', 'w+')
+        outputFile.write(output)
+        outputFile.close()
+        output = extract.clearPage(output)
+        outputFile = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/List_of/' + pageName.replace(' ','_') + '-clear-'+socket.gethostname()+'-parsed-page.page', 'w+')
+        outputFile.write(output)
+        outputFile.close()
+        return extractedPages
+        # TODO dodělat extrakci pouze jedné stránky
+      #elif "%%#DOC" not in line and "%%#PAR" not in line and parsed:
+      elif parsed:
         output += line
+  return extractedPages
 
 if __name__ == "__main__":
   page = sys.argv[1]
-  outputFile = sys.argv[2]
+  allPages = False
   pureText = False
+  if len(sys.argv) > 2:
+    allPages = True
   if len(sys.argv) > 3:
     pureText = True
-  extractedPage = ""
-  # output file name
-  outputFileName = "/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/" + outputFile + "-"+socket.gethostname()+"-parsed-page.page"
+  extractedPages = 0
+
   # parsing data from servers
   for filename in glob.glob(os.path.join('/mnt/data/indexes/wikipedia/enwiki-20150901/collPart*', '*.mg4j')):
     file = open(filename, 'r')
-    extractedPage = getPage(file,page)
-    # page was found
-    if extractedPage is None:
-      extractedPage = ""
-    if len(extractedPage) > 0:
-      extractedPage = extract.clearPage(extractedPage)
-      # pure text extract
-      if pureText:
-        extractedPage = re.sub(r'\|[^\]]+\]\]', '',extractedPage).replace('[[', '')
-      # output to file
-      outputFile = open(outputFileName, 'w+')
-      outputFile.write(extractedPage)
-      outputFile.close()
+    extractedPages = getPage(file,page,extractedPages)
+
+    if extractedPages > MAX_PAGES:
+      print "Zpracování více jak sto stran, ukončuji program..."
       sys.exit(0)
 
   # end of script

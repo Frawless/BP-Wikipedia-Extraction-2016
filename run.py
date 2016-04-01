@@ -8,6 +8,7 @@ import os
 import subprocess
 import argparse
 import glob
+import re
 
 
 # class for terminal colors
@@ -33,13 +34,16 @@ def parseInput(tmp_input):
 
 
 def concatFiles():
+  nameArray = {}
+  previousLine = ""
+  addLine = ""
   lineCounter = 0
   with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/entity-non-page.none', 'w+') as outfile:
-    for filename in glob.glob(os.path.join('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/', '*.tmp')):
-      with open(filename) as infile:
-        for line in infile:
-          lineCounter += 1
-          outfile.write(line)
+     for filename in glob.glob(os.path.join('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/', '*.tmp')):
+       with open(filename) as infile:
+         for line in infile:
+           lineCounter += 1
+           outfile.write(line)
   outfile.close()
   print bcolors.WARNING + "Mažu pomocné soubory..." + bcolors.ENDC
   # clearing *.tmp files
@@ -47,6 +51,42 @@ def concatFiles():
   # os.remove(file)
   print bcolors.OKGREEN + "Soubor vytvořen!" + bcolors.ENDC
   print bcolors.OKGREEN + "Počet řádků: {}".format(lineCounter) + bcolors.ENDC
+
+  print bcolors.WARNING + "Spouštím spojování výstupu..." + bcolors.ENDC
+
+  lineCounter = 0
+  file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/entity-non-page.none', 'r')
+  outfile = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/entity-non-page-no-split.none', 'w+')
+  for line in file:
+    if line is "":
+      continue
+    if addLine is "":
+      addLine = line
+    entity = re.search('([^\t]+)\thttp[^\t]+\t([^\n]+)',line)
+    if entity:
+      if entity.group(1) in previousLine:
+        addLine = addLine[:-1]+"|"+entity.group(2)+"\n"
+      elif previousLine is not "":
+        outfile.write(addLine)
+        addLine = ""
+        lineCounter += 1
+    previousLine = line
+  outfile.close()
+  print bcolors.OKGREEN + "Soubor vytvořen!" + bcolors.ENDC
+  print bcolors.OKGREEN + "Počet řádků: {}".format(lineCounter) + bcolors.ENDC
+
+def concatSentences(fileName):
+  nameArray = {}
+  tmpLine = ""
+  for line in fileName:
+    entity = re.search('([^\t]+)\thttp[^\t]+\t([^\n]+)',line)
+    if entity:
+      if entity.group(1) in tmpLine:
+        auxLine = nameArray.pop(len(nameArray)-1)
+        nameArray.append(auxLine+"|"+entity.group(2))
+      else:
+        nameArray.append(line)
+    tmpLine = line
 
 
 # main
