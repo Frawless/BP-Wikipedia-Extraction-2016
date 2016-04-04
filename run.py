@@ -32,14 +32,13 @@ def parseInput(tmp_input):
   f.write(str)
   f.close
 
-
-def concatFiles():
+def concatUrlFiles():
   nameArray = {}
   previousLine = ""
   addLine = ""
   lineCounter = 0
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/entity-non-page.none', 'w+') as outfile:
-     for filename in glob.glob(os.path.join('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/', '*.tmp')):
+  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/all-wiki-links.aux', 'w+') as outfile:
+     for filename in glob.glob(os.path.join('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/', '*.links')):
        with open(filename) as infile:
          for line in infile:
            lineCounter += 1
@@ -47,46 +46,29 @@ def concatFiles():
   outfile.close()
   print bcolors.WARNING + "Mažu pomocné soubory..." + bcolors.ENDC
   # clearing *.tmp files
-  # for file in glob.glob("/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/*.tmp"):
-  # os.remove(file)
+  for file in glob.glob("/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/*.links"):
+    os.remove(file)
   print bcolors.OKGREEN + "Soubor vytvořen!" + bcolors.ENDC
   print bcolors.OKGREEN + "Počet řádků: {}".format(lineCounter) + bcolors.ENDC
 
-  print bcolors.WARNING + "Spouštím spojování výstupu..." + bcolors.ENDC
-
-  lineCounter = 0
-  file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/entity-non-page.none', 'r')
-  outfile = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/entity-non-page-no-split.none', 'w+')
-  for line in file:
-    if line is "":
-      continue
-    if addLine is "":
-      addLine = line
-    entity = re.search('([^\t]+)\thttp[^\t]+\t([^\n]+)',line)
-    if entity:
-      if entity.group(1) in previousLine:
-        addLine = addLine[:-1]+"|"+entity.group(2)+"\n"
-      elif previousLine is not "":
-        outfile.write(addLine)
-        addLine = ""
-        lineCounter += 1
-    previousLine = line
-  outfile.close()
-  print bcolors.OKGREEN + "Soubor vytvořen!" + bcolors.ENDC
-  print bcolors.OKGREEN + "Počet řádků: {}".format(lineCounter) + bcolors.ENDC
-
-def concatSentences(fileName):
+# concat files with entity
+def concatFiles():
   nameArray = {}
-  tmpLine = ""
-  for line in fileName:
-    entity = re.search('([^\t]+)\thttp[^\t]+\t([^\n]+)',line)
-    if entity:
-      if entity.group(1) in tmpLine:
-        auxLine = nameArray.pop(len(nameArray)-1)
-        nameArray.append(auxLine+"|"+entity.group(2))
-      else:
-        nameArray.append(line)
-    tmpLine = line
+  lineCounter = 0
+  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/entity-non-page.none', 'w+') as outfile:
+     for filename in glob.glob(os.path.join('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/', '*.check')): #TODO - file *.checked !!!
+       print filename
+       with open(filename) as infile:
+         for line in infile:
+           lineCounter += 1
+           outfile.write(line)
+  outfile.close()
+  print bcolors.WARNING + "Mažu pomocné soubory..." + bcolors.ENDC
+  # clearing *.tmp files
+  #for file in glob.glob("/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/*.checked"):
+    #os.remove(file)
+  print bcolors.OKGREEN + "Soubor vytvořen!" + bcolors.ENDC
+  print bcolors.OKGREEN + "Počet řádků: {}".format(lineCounter) + bcolors.ENDC
 
 
 # main
@@ -106,13 +88,24 @@ if __name__ == "__main__":
 
   # connect to servers
   try:
-    if subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/extract.py " + results.input,shell=True) == 0:
-      print bcolors.OKGREEN + "Dokončena extrakce!" + bcolors.ENDC + bcolors.OKGREEN + "Spouštím tvorbu výsledného souboru..." + bcolors.ENDC
+    '''if subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/extract.py " + results.input,shell=True) == 0:
+      print bcolors.OKGREEN + "Dokončena extrakce!" + bcolors.ENDC + bcolors.OKGREEN + "Spouštím tvorbu URL souboru..." + bcolors.ENDC
+      concatUrlFiles()
+      print bcolors.OKGREEN + "Done" + bcolors.ENDC
+      #sys.exit(0)
+    else:
+      print bcolors.FAIL + "Chyba na některém serveru" + bcolors.ENDC
+      #sys.exit(1)'''
+    print bcolors.OKGREEN + "Spouštím ověřování URL..." + bcolors.ENDC
+    if subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/check-url.py ",shell=True) == 0:
+      print bcolors.OKGREEN + "Dokončena kontrola URL!" + bcolors.ENDC + bcolors.OKGREEN + "Spouštím tvorbu výsledného souboru..." + bcolors.ENDC
       concatFiles()
       print bcolors.OKGREEN + "Done" + bcolors.ENDC
       sys.exit(0)
     else:
-      print bcolors.FAIL + "Chyba" + bcolors.ENDC
+      print bcolors.FAIL + "Chyba na některém serveru" + bcolors.ENDC
       sys.exit(1)
   except OSError as e:
     print bcolors.FAIL + "Execution failed:" + bcolors.ENDC + "", e
+
+# 2 stroužky česneku, 3 lžičky sojovky, 4 lžíce majonézy, 1 a 1/2 lžíce medu, feferonka, sůl, rovná lžička papriky

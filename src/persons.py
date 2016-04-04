@@ -5,6 +5,7 @@
 
 import re
 
+# Method for extract persons from current page
 def getPersons(page, listOfNouns):
   names = []
   output = ""
@@ -14,13 +15,10 @@ def getPersons(page, listOfNouns):
   page_URL = ""
   set = False
   next_name = True
-  # print page.replace('\n','@\n')
-  # print "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+
   for sentence in page.split("\n"):
-    # print sentence
+    # parsing sentence with PAGE tag (PAGE FILTER)
     if "%%#PAGE" in sentence:
-    # print "parse page"
-    # print sentence
       if "entity=" in sentence:
         entity = re.search(r'[^ ]+ ([^\t]+)\t(http[^\s]+)\sentity=([^\s]+)', sentence)
         #page_URL = entity.group(2)
@@ -37,6 +35,9 @@ def getPersons(page, listOfNouns):
         names.append(real_name)
         real_name = ""
     else:
+      # parse only sentences with verb (VERB FILTER)
+      if not re.search('\[([^\|]+\|V[^\|]+\|[^\]]+)\]',sentence):
+        continue
       # print "parse non.page"
       # print sentence
       for item in sentence.split(" "):
@@ -57,11 +58,7 @@ def getPersons(page, listOfNouns):
                 continue
               parsed_name += item + " "
               set = True
-            '''if "URL=" in item:
-              tmp = re.search(r'\|URL=([^\]]+)', item)
-              parsed_name = ""
-              next_name = False
-              continue'''
+
             if "entity=" in item:
               entity = re.search(r'\|entity=(person|artist)', item)
               if not entity:
@@ -71,7 +68,6 @@ def getPersons(page, listOfNouns):
           else:
             next_name = True
             if parsed_name.count('NP') > 1 and re.search('\s', parsed_name[:-1]) and not re.search('\d',parsed_name) and len(re.findall('[A-Z]', parsed_name)) > 1:
-              # print re.search('\s',parsed_name)
               if "URL=" in parsed_name:
                 next_name = True
                 names.append(re.sub(r'\|[^\]]+\]\]', '', parsed_name).replace('[[', ''))
@@ -81,7 +77,6 @@ def getPersons(page, listOfNouns):
               parsed_name = re.sub(r'\|[^\]]+\]\]', '', parsed_name).replace('[[', '')
               #parsed_name = parsed_name;
               # print "parsed name obsahuje NP"
-              # print parsed_name
             else:
               parsed_name = ""
               continue
@@ -96,11 +91,10 @@ def getPersons(page, listOfNouns):
                   real_name = ""
                   break
                 if part in parsed_name and part not in real_name:
-                  if "." not in part:
-                    real_name += part + " "
+                  #if "." not in part:
+                  real_name += part + " "
+
               if real_name is not "" and compareNames(real_name,names) and URL is "":
-              #if real_name is not "" and real_name[:-1] not in names and URL is "":
-                # print "Přidávám: "+real_name
                 output += real_name + "\t" + page_URL + "\t" + re.sub(r'\|[^\]]+\]\]', '',sentence).replace('[[', '') + "\n"
                 # zakomentováno -> odstranění duplicit
                 #names.append(real_name[:-1])
@@ -108,25 +102,27 @@ def getPersons(page, listOfNouns):
                 parsed_name = ""
                 URL = ""
                 set = False
+              else:
+                real_name = ""
+  # return output -> maybe output[:-1] but in this case some entities are grouped together
+  return output
 
-  return output[:-1]
 
-
+# Method for compare entity name with entities with URL from current page
 def compareNames(name, name_array):
-  #print name_array
   heurestic = 0
-  #print name
   if name in name_array:
     return False
   # get single name from list
   for item in name_array:
-    #name = name.split(" ")  # split name to single words
-    item = item.split(" ")  # split name from lsit to single words
-    # iterating of single words
-    for part in item:
-      for part2 in name:
-        if part == part2:
-          heurestic += 1
+    # iterate over names in array and compare with entity name
+    for part in name.split(" "):
+      if part == "":
+        continue
+      if part in item:
+        heurestic += 1
     if heurestic > 1:
       return False
+    else:
+      heurestic = 0
   return True

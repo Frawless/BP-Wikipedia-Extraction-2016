@@ -20,44 +20,40 @@ def getListPage():
   level = "\t"
   xmlFile = ""
   #List of Latin words with English derivatives
-  listRegex = re.compile(r'List of Latin words with English derivatives|List of United States cities by population',re.I)
+  #listRegex = re.compile(r'List of Latin words with English derivatives|List of United States cities by population',re.I)
+  listRegex = re.compile(r'List of',re.I)
 
   count = 0
 
   isListPage = False
   counter = 0
 
+  file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/List_of/ExtractedLists.xml','w+')
+  file.write('<?xml version="1.0" encoding="UTF-8"?>\n')
   print 'Začíná parsing...'
   # parsování data
   for event, elem in ET.iterparse('/mnt/minerva1/nlp/corpora_datasets/monolingual/english/wikipedia/enwiki-20160113-pages-articles.xml'):
-    if count > 1:
-      print "Nalezeny všechny výsledky, ukončuji program..."
-      return
-
     if event == 'end':
       if elem.tag == "{http://www.mediawiki.org/xml/export-0.10/}title":
         tag = elem.tag.replace('{http://www.mediawiki.org/xml/export-0.10/}','')
         #print elem.text
         counter += 1
-        if counter % 10000 == 0:
-          print "Zpracováno: {}".format(counter)
         if listRegex.search(elem.text):
           count += 1
           isListPage = True
-          print "Stránka nalezena!\nVytvářím soubor..."
-          file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/List_of/'+elem.text.replace(' ','_')+'.xml','w+')
-          file.write('<?xml version="1.0" encoding="UTF-8"?>\n<page>\n')
+          count += 1
+          #file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/List_of/'+elem.text.replace(' ','_')+'.xml','w+')
+          file.write('<page>\n')
           file.write(level+'<title>'+unicode(elem.text).encode('utf-8')+'</title>\n')
           xmlFile = ""
         elif isListPage:
-          print "Zavírám soubor..."
-          file.close()
+          #file.close()
           isListPage = False
         else:
           isListPage = False
       elif elem.tag == "{http://www.mediawiki.org/xml/export-0.10/}timestamp" and isListPage:
         tag = elem.tag.replace('{http://www.mediawiki.org/xml/export-0.10/}','')
-        file.write('\t</'+tag+'>'+unicode(elem.text).encode('utf-8')+'</'+tag+'>\n')
+        file.write('\t<'+tag+'>'+unicode(elem.text).encode('utf-8')+'</'+tag+'>\n')
       elif elem.tag == "{http://www.mediawiki.org/xml/export-0.10/}username" and isListPage:
         tag = elem.tag.replace('{http://www.mediawiki.org/xml/export-0.10/}','')
         level = '\t\t'
@@ -65,18 +61,24 @@ def getListPage():
       elif elem.tag == "{http://www.mediawiki.org/xml/export-0.10/}id" and isListPage:
         tag = elem.tag.replace('{http://www.mediawiki.org/xml/export-0.10/}','')
         if level == '\t\t':
-          file.write(level+'</'+tag+'>'+unicode(elem.text).encode('utf-8')+'</'+tag+'>\n\t</contributor>')
+          file.write(level+'<'+tag+'>'+unicode(elem.text).encode('utf-8')+'</'+tag+'>\n\t</contributor>\n')
         else:
-          file.write(level+'</'+tag+'>'+unicode(elem.text).encode('utf-8')+'</'+tag+'>\n')
+          file.write(level+'<'+tag+'>'+unicode(elem.text).encode('utf-8')+'</'+tag+'>\n')
       elif elem.tag == "{http://www.mediawiki.org/xml/export-0.10/}page" and isListPage:
         tag = elem.tag.replace('{http://www.mediawiki.org/xml/export-0.10/}','')
-        file.write('</page>')
-      elif elem.tag != "{http://www.mediawiki.org/xml/export-0.10/}contributor" and isListPage:
+        file.write('</page>\n')
+        level = '\t'
+      elif elem.tag == "{http://www.mediawiki.org/xml/export-0.10/}sha1" and isListPage:
         tag = elem.tag.replace('{http://www.mediawiki.org/xml/export-0.10/}','')
-        file.write('\t</'+tag+'>'+unicode(elem.text).encode('utf-8')+'</'+tag+'>\n')
+        file.write('\t<revision>\n\t\t</'+tag+'>'+unicode(elem.text).encode('utf-8')+'</'+tag+'>\n\t</revision>\n')
+      elif elem.tag != "{http://www.mediawiki.org/xml/export-0.10/}contributor" and elem.tag != "{http://www.mediawiki.org/xml/export-0.10/}revision" and isListPage:
+        tag = elem.tag.replace('{http://www.mediawiki.org/xml/export-0.10/}','')
+        file.write('\t<'+tag+'>'+unicode(elem.text).encode('utf-8')+'</'+tag+'>\n')
     elem.clear()  # discard the element
 
+  file.close()
   print "\nCelkový počet článků: ", counter
+  print "\nCelkový počet nalezených listů: ", count
   print "Done"
 
 

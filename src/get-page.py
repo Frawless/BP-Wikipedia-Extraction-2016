@@ -22,11 +22,11 @@ def getPage(file,page,extractedPages):
         parsed = True
         output += line
       elif "%%#PAGE" in line and parsed:
-        outputFile = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/List_of/' + pageName.replace(' ','_') + '-'+socket.gethostname()+'-parsed-page.page', 'w+')
+        outputFile = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/' + pageName.replace(' ','_') + '-'+socket.gethostname()+'-parsed-page.page', 'w+')
         outputFile.write(output)
         outputFile.close()
         output = extract.clearPage(output)
-        outputFile = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/List_of/' + pageName.replace(' ','_') + '-clear-'+socket.gethostname()+'-parsed-page.page', 'w+')
+        outputFile = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/' + pageName.replace(' ','_') + '-clear-'+socket.gethostname()+'-parsed-page.page', 'w+')
         outputFile.write(output)
         outputFile.close()
         return extractedPages
@@ -38,6 +38,7 @@ def getPage(file,page,extractedPages):
 
 if __name__ == "__main__":
   page = sys.argv[1]
+  print page
   allPages = False
   pureText = False
   if len(sys.argv) > 2:

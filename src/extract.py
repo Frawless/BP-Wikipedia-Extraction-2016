@@ -50,7 +50,6 @@ def clearPage(page):
       tmp = re.search(r'^\d+\s+([^\s]+\s+[^\s]+\s+[^\s]+)',line)  # token + tag + lemma - can be modifed for another options
       tmp_nertag = re.search(r'\d+\s+([^\s]+\s+){14}', line)  # LF nertag
       tmp_url = re.search(r'\d+\s+([^\s]+\s+){9}', line)
-      # TODO tady by mohla nastat chyba, regex nějako blbne mi přijde, elif tmp: nefunguje, why?!
       if tmp_nertag and tmp and tmp_url:
         if "0" not in tmp_nertag.group(1) and "0" not in tmp_url.group(1):
           parsedPage += "[[" + re.sub('\s+', '|', tmp.group(1)) + "|entity=" + tmp_nertag.group(1)[:-1] + "|URL=" + tmp_url.group(1)[:-1] + "]] "
@@ -87,8 +86,7 @@ def getInformationFromPage(file, task_list):
             array.append(tmp)
           elif task[0].replace('entity=', '') in line and 'verb=' not in task[1]:  # pages ..."entity"
             array.append(tmp)
-          elif task[0].replace('entity=', '') in line and 'task=' in task[
-            2]:  # pages ..."entity1" (influence)
+          elif task[0].replace('entity=', '') in line and 'task=' in task[2]:  # pages ..."entity1" (influence)
             array.append(tmp)
           elif task[1].replace('entity=', '') in line and 'task=' in task[2]:  # pages ..."entity2" (influence) TODO občas out of index
             array.append(tmp)
@@ -103,14 +101,17 @@ def getInformationFromPage(file, task_list):
 
 
 # Method for TODO
-def extractNames(file, listOfNouns, outputFile, filename):
-  print "\033[93mZpracovávám soubor: " + filename + "\033[0m\n"
+def extractNames(file, listOfNouns, outputFile, filename, wikiLinksFile):
+  print "\033[93mZpracovávám soubor: " + filename + "\033[0m"
   data = ""
   outputTags = ""
   page = ""
   for line in file:
     if "%%#PAGE" in line:
-      # print line
+      # add page link to file
+      url = re.search('%%#PAGE.*\t([^\n]+)',line)
+      if url:
+        wikiLinksFile.write(url.group(1)+'\n')
       if len(page) > 0:
         # print page
         page = clearPage(page) + "\n"
@@ -131,7 +132,7 @@ def extractNames(file, listOfNouns, outputFile, filename):
   page = ""
   # print data
   outputFile.write(data)
-  print "\033[92mSoubor: " + filename + " dokončen.\033[0m\n"
+  print "\033[92mSoubor: " + filename + " dokončen.\033[0m"
 
 
 def createListOfNouns():
@@ -144,39 +145,29 @@ def createListOfNouns():
 # main
 if __name__ == "__main__":
   input = sys.argv[1]
-  print input
-  print(socket.gethostname())
   array = []
   outputTags = ""
   pagetitle = ""
   page = ""
-  outputFileName = "/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/" + socket.gethostname() + "-non-page.tmp"
-
-  outputFile = open(outputFileName, 'w+')
+  # wikiLinks from each server
+  wikiLinksFile = open("/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/" + socket.gethostname() + ".links", 'w+')
+  # output file with entity
+  outputFile = open("/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/" + socket.gethostname() + "-non-page.tmp-entity", 'w+')
 
   listOfNouns = createListOfNouns()
   input_list = find.parseInput(input)  # create input_list
   task_list = find.parseList(input_list)  # create task list
 
-  #print listOfNouns
-
-  # TODO - nastavit vyhledávání podle zpracovaného vstupu od uživatele, momentálně funguje obecně jen pro hledání jedné stránky
-  # nejprve podle vstupu nastavit co vyhledat a poté stránku zpracovat funkcí findInformation()
   for filename in glob.glob(os.path.join('/mnt/data/indexes/wikipedia/enwiki-20150901/collPart*', '*.mg4j')):
   #filename = "/mnt/data/indexes/wikipedia/enwiki-20150901/collPart001/athena1_wiki_00.vert.parsed.tagged.mg4j"
-  #filename = "../data.mg4j"
+  #filename = "/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/Andre_Emmerich-knot30-parsed-page.page"
+  #filename = "/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/Peter_Fuller-knot17-parsed-page.page"
   #if True:
     file = open(filename, 'r')
     # getInformationFromPage(file,task_list)
-    extractNames(file, listOfNouns, outputFile, filename)
+    extractNames(file, listOfNouns, outputFile, filename,wikiLinksFile)
 
   task_list = find.setFoundFalse(task_list)
-  # print result
-  # closing output file
   outputFile.close()
-  # result ???
-  # print "Výsledek:"
-  # for task in task_list:
-  # print task
 
   sys.exit(0)
