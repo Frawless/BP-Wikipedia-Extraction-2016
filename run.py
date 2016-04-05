@@ -88,24 +88,26 @@ if __name__ == "__main__":
 
   # connect to servers
   try:
-    '''if subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/extract.py " + results.input,shell=True) == 0:
+    if subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/extract.py " + results.input,shell=True) == 0:
       print bcolors.OKGREEN + "Dokončena extrakce!" + bcolors.ENDC + bcolors.OKGREEN + "Spouštím tvorbu URL souboru..." + bcolors.ENDC
       concatUrlFiles()
       print bcolors.OKGREEN + "Done" + bcolors.ENDC
       #sys.exit(0)
     else:
       print bcolors.FAIL + "Chyba na některém serveru" + bcolors.ENDC
-      #sys.exit(1)'''
+      #sys.exit(1)
     print bcolors.OKGREEN + "Spouštím ověřování URL..." + bcolors.ENDC
-    if subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/check-url.py ",shell=True) == 0:
+    '''if subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python3 /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/check-url.py ",shell=True) == 0:
       print bcolors.OKGREEN + "Dokončena kontrola URL!" + bcolors.ENDC + bcolors.OKGREEN + "Spouštím tvorbu výsledného souboru..." + bcolors.ENDC
       concatFiles()
       print bcolors.OKGREEN + "Done" + bcolors.ENDC
       sys.exit(0)
     else:
       print bcolors.FAIL + "Chyba na některém serveru" + bcolors.ENDC
-      sys.exit(1)
+      sys.exit(1)'''
   except OSError as e:
     print bcolors.FAIL + "Execution failed:" + bcolors.ENDC + "", e
+
+  sys.exit(0)
 
 # 2 stroužky česneku, 3 lžičky sojovky, 4 lžíce majonézy, 1 a 1/2 lžíce medu, feferonka, sůl, rovná lžička papriky

@@ -6,104 +6,105 @@
 import re
 
 # Method for extract persons from current page
-def getPersons(page, listOfNouns):
+def getPersons(page, listOfNouns, wikiLinksFile):
   names = []
   output = ""
-  real_name = ""
-  parsed_name = ""
-  URL = ""
-  page_URL = ""
+  realName = ""
+  parsedName = ""
+  pageURL = ""
   set = False
-  next_name = True
+  nextName = True
+  writeFirstSentence = False
 
   for sentence in page.split("\n"):
     # parsing sentence with PAGE tag (PAGE FILTER)
     if "%%#PAGE" in sentence:
+      url = re.search('%%#PAGE.*\t([^\n]+)\s',sentence)
+      if url:
+        wikiLinksFile.write(url.group(1)+'\t')
+        writeFirstSentence = True
       if "entity=" in sentence:
         entity = re.search(r'[^ ]+ ([^\t]+)\t(http[^\s]+)\sentity=([^\s]+)', sentence)
-        #page_URL = entity.group(2)
       else:
         entity = re.search(r'[^ ]+ ([^\t]+)\t(http[^\s]+)', sentence)
       if entity:
-        # print entity.group(1)
-        page_URL = entity.group(2)
-        # print page_URL
-        real_name += entity.group(1) + "|" + entity.group(2)
+        pageURL = entity.group(2)  # save actual page URL
+        realName += entity.group(1) + "|" + entity.group(2)  # actual page entity + URL
         names.append(entity.group(1))
-        # print "přidání do names při page"
-        # print real_name
-        names.append(real_name)
-        real_name = ""
+        names.append(realName)
+        realName = ""
     else:
+      # add first sentence from page to list for checking entities url
+      if writeFirstSentence:
+        wikiLinksFile.write(re.sub(r'\|[^\]]+\]\]', '',sentence).replace('[[', '')+'\n')
+        writeFirstSentence = False
       # parse only sentences with verb (VERB FILTER)
       if not re.search('\[([^\|]+\|V[^\|]+\|[^\]]+)\]',sentence):
         continue
-      # print "parse non.page"
-      # print sentence
       for item in sentence.split(" "):
         # print item
         isName = re.search(r'\[\[[^\|]+\|([^\|]+)', item)
         if isName:
-          if isName.group(1) == "NP" or isName.group(1) == "GGG" or isName.group(1) == "POS" or isName.group(1) == "IN" and next_name:
+          if isName.group(1) == "NP" or isName.group(1) == "GGG" or isName.group(1) == "POS" or isName.group(1) == "IN" and nextName:
             if isName.group(1) == "POS":
-              parsed_name = ""
-              next_name = False
+              parsedName = ""
+              nextName = False
               continue
             # print "tvořím jméno"
             tmp = re.search(r'\[\[([^\|]+)', item)
             if tmp:
               if tmp.group(1) is not "of" and isName.group(1) == "IN":
-                parsed_name = ""
-                next_name = False
+                parsedName = ""
+                nextName = False
                 continue
-              parsed_name += item + " "
+              parsedName += item + " "
               set = True
 
             if "entity=" in item:
               entity = re.search(r'\|entity=(person|artist)', item)
               if not entity:
-                parsed_name = ""
-                next_name = False
+                parsedName = ""
+                nextName = False
                 continue
           else:
-            next_name = True
-            if parsed_name.count('NP') > 1 and re.search('\s', parsed_name[:-1]) and not re.search('\d',parsed_name) and len(re.findall('[A-Z]', parsed_name)) > 1:
-              if "URL=" in parsed_name:
-                next_name = True
-                names.append(re.sub(r'\|[^\]]+\]\]', '', parsed_name).replace('[[', ''))
-                parsed_name = ""
+            nextName = True
+            if parsedName.count('NP') > 1 and re.search('\s', parsedName[:-1]) and not re.search('\d',parsedName) and len(re.findall('[A-Z][a-z]+', parsedName)) > 1:
+              if "URL=" in parsedName:
+                nextName = True
+                names.append(re.sub(r'\|[^\]]+\]\]', '', parsedName).replace('[[', ''))
+                parsedName = ""
                 continue
                 #print "neparsuju"
-              parsed_name = re.sub(r'\|[^\]]+\]\]', '', parsed_name).replace('[[', '')
-              #parsed_name = parsed_name;
+              parsedName = re.sub(r'\|[^\]]+\]\]', '', parsedName).replace('[[', '')
+              #parsedName = parsedName;
               # print "parsed name obsahuje NP"
             else:
-              parsed_name = ""
+              parsedName = ""
               continue
             if set:
-              for part in parsed_name.split(" "):
+              for part in parsedName.split(" "):
                 # print "part výpis pro porování se seznamem"
                 # print part
                 if part.lower() in listOfNouns:
                 #if re.sub(r'\|[^\]]+\]\]', '', part).replace('[[', '').lower() in listOfNouns:
                   # print part+" -> je součástí listu"
-                  parsed_name = ""
-                  real_name = ""
+                  parsedName = ""
+                  realName = ""
                   break
-                if part in parsed_name and part not in real_name:
+                if part in parsedName and part not in realName:
                   #if "." not in part:
-                  real_name += part + " "
+                  realName += part + " "
 
-              if real_name is not "" and compareNames(real_name,names) and URL is "":
-                output += real_name + "\t" + page_URL + "\t" + re.sub(r'\|[^\]]+\]\]', '',sentence).replace('[[', '') + "\n"
+              if realName is not "" and compareNames(realName,names):
+                output += realName + "\t" + pageURL + "\t" + re.sub(r'\|[^\]]+\]\]', '',sentence).replace('[[', '') + "\n"
                 # zakomentováno -> odstranění duplicit
                 #names.append(real_name[:-1])
-                real_name = ""
-                parsed_name = ""
+                realName = ""
+                parsedName = ""
                 URL = ""
                 set = False
               else:
-                real_name = ""
+                realName = ""
   # return output -> maybe output[:-1] but in this case some entities are grouped together
   return output
 

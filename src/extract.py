@@ -106,18 +106,17 @@ def extractNames(file, listOfNouns, outputFile, filename, wikiLinksFile):
   data = ""
   outputTags = ""
   page = ""
+  counterTST = 0
   for line in file:
     if "%%#PAGE" in line:
+      counterTST += 1
       # add page link to file
-      url = re.search('%%#PAGE.*\t([^\n]+)',line)
-      if url:
-        wikiLinksFile.write(url.group(1)+'\n')
       if len(page) > 0:
         # print page
         page = clearPage(page) + "\n"
         # print page
         # print "###################################################"
-        data += persons.getPersons(page, listOfNouns)
+        data += persons.getPersons(page, listOfNouns, wikiLinksFile)
         # print data
         # print "###################################################"
         page = ""
@@ -128,11 +127,12 @@ def extractNames(file, listOfNouns, outputFile, filename, wikiLinksFile):
       page += line
 
   page += clearPage(page) + "\n"
-  data += persons.getPersons(page, listOfNouns);
+  data += persons.getPersons(page, listOfNouns, wikiLinksFile);
   page = ""
   # print data
   outputFile.write(data)
   print "\033[92mSoubor: " + filename + " dokončen.\033[0m"
+  print counterTST
 
 
 def createListOfNouns():
