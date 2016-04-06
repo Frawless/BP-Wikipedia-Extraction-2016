@@ -30,7 +30,8 @@ class myThread (threading.Thread):
         self.name = name
     def run(self):
         print ("Starting " + self.name)
-        functionThread(self.name, self.threadID)
+        #functionThread(self.name, self.threadID)
+        checkURL(self.threadID)
         print ("Exiting " + self.name)
 
 
@@ -65,7 +66,9 @@ def splitFile():
   counter = 0
   fileNumber = 0
   fileCounter = 1
+  print ("Existuje složka?")
   if not os.path.exists('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()):
+    print ("Vytvářím složku")
     os.makedirs('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname())
   currentFile = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(fileNumber)+'.tmp','w+')
   with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/' + socket.gethostname() + '-non-page.check', 'r') as inputFile:
@@ -130,48 +133,72 @@ def functionThread(threadName, threadNumber):
 def checkMultiThreadURL(fileCount):
   d = {}
   counter = 0
-  while counter < fileCount:
+  while counter < 1:
     d[counter] = myThread("Thread-"+str(counter), counter)
     counter += 1
 
   counter = 0
-  while counter < fileCount:
+  while counter < 1:
     d[counter].start()
     counter += 1
   counter = 0
-  while counter < fileCount:
+  while counter < 1:
     d[counter].join()
     counter += 1
+
+
+def compareEntities(verb,noun,line):
+  heurestic = 0
+  for item in verb.split(' '):
+    if item in line:
+      heurestic += 1
+  for item in noun.split(' '):
+    if item in line:
+      heurestic += 4
+
+  return True if heurestic > 4 else False
 
 
 # metod for check entity url
 def checkURL(threadNumber):
   verb = ""
   noun = ""
-  #file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.checked','w+')
-  #fileDel = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.deleted','w+')
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.check', 'r') as entitySourceFile:
+
+  file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.checked','w+')
+  fileDel = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.deleted','w+')
+  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.tmp', 'r') as entitySourceFile:
     for entity in entitySourceFile:
+      print (entity)
+      write = True
       with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/all-wiki-links.aux', 'r') as entityCheckFile:
         for line in entityCheckFile:
-          entity = re.search('[^\t]+').group(1)
-          entityURL = 'https://en.wikipedia.org/wiki/'+entity.replace(' ','_')
+          entityName = re.search('([^\t]+)[^\n]+',entity).group(1)[:-1]
+          entityURL = 'https://en.wikipedia.org/wiki/'+entityName.replace(' ','_')
+          if not re.search('(http[^\t]+)\t[^\n]+',line):
+            continue
+          entityInfo = re.search('http[^\t]+\t([^\s]+)\s([^\n]+)',line)
           if entityURL in line:
-            entitySourceInfo = re.search('http[^\t]+\t([^\n]+)',line)
-            for item in entitySourceInfo.split(" "):
-              if len(verb) > 0 and re.search('\[\[[^\|]+(V[^\]]+)', item):  # gather verb next to previsous verb
-                verb += re.search('\[\[([^\|]+)\|',item).group(1)
-              elif len(noun) > 0 and re.search('\[\[[^\|]+(N[^\]]+)',item): # gather noun next to previsous noun
-                noun += re.search('\[\[([^\|]+)\|',item).group(1)
-              elif len(verb) > 0 and re.search('\[\[[^\|]+(N[^\]]+)',item): # gather noun
-                noun += re.search('\[\[([^\|]+)\|',item).group(1)
-              elif re.search('\[\[[^\|]+(V[^\]]+)',item): # gather verb
-                verb += re.search('\[\[([^\|]+)\|',item).group(1)
+            verb = entityInfo.group(1)
+            noun = entityInfo.group(2)
+            if not compareEntities(verb, noun, entity):
+              # entity doesn't have own page but another entity with same name has it
+              print ("Zápis do file s FALSE")
+              file.write(entity)
+              write = False
+            else:
+              # entity already has page on wikipedia
+              print ("Zápis do fileDel")
+              fileDel.write(entity)
+              write = False
+            break
+        if write:
+          # entity doesn't have own page
+          print ("Zápis do file s true")
+          file.write(entity)
 
-
-
-  #file.close()
-  #fileDel.close()
+    print ("Dokončen entity file")
+  file.close()
+  fileDel.close()
 
 #main
 if __name__ == "__main__":
@@ -180,10 +207,10 @@ if __name__ == "__main__":
   # checking url
   #checkURL()
   # TEST
-  #fileCount = splitFile()
-  #checkMultiThreadURL(fileCount)
-  #reJoinFiles()
-  checkURL(1)
+  fileCount = splitFile()
+  checkMultiThreadURL(fileCount)
+  reJoinFiles()
+  #checkURL(1)
 
   sys.exit(0)
 

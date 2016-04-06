@@ -5,6 +5,36 @@
 
 import re
 
+def getEntityInfo(sentence):
+  verb = ""
+  noun = ""
+  #print sentence
+  # TODO - for humanoid entities is tmpVerb regex enought, but if you wanna check all type of entities is more better here
+  # TODO - loop over sentence and create expresion 'what is current entity' like in find.py - method checkInformation() line 14
+  tmpVerb = re.search('\[\[([^\|]+)\|V[^\|]+\|be\]\].*?\[\[([^\|]+)\|N[N|P]\|[^\]]+\]\][^\n]+', sentence)
+  #tmpNoun = re.search('\[\[([^\|]+)\|V[^\|]+\|be\]\].*?\[\[([^\|]+)\|N[^\]]+\]\] \[\[([^\|]+)\|N[^\]]+\]\][^\n]+',sentence)
+  if tmpVerb:
+    verb = tmpVerb.group(1)
+    noun = tmpVerb.group(2)
+
+  '''for item in sentence.split(" "):
+    tmpVerb = re.search('\[\[([^\|]+)\|V[^\|]+\|be\]\]', item)
+    tmpNoun = re.search('\[\[([^\|]+)\|N[^\]]+\]\]',item)
+    if len(verb) > 0 and tmpVerb:  # gather verb next to previsous verb
+      verb += " "+tmpVerb.group(1)
+    elif len(noun) > 0 and tmpNoun: # gather noun next to previsous noun
+      noun += " "+tmpNoun.group(1)
+    elif len(verb) > 0 and tmpNoun: # gather noun
+      noun += tmpNoun.group(1)
+    elif tmpVerb: # gather verb
+      verb += tmpVerb.group(1)'''
+  #print verb+" "+noun
+  if verb == "":
+    verb = "uknown"
+  if noun == "":
+    noun = "uknown"
+  return verb, noun
+
 # Method for extract persons from current page
 def getPersons(page, listOfNouns, wikiLinksFile):
   names = []
@@ -19,7 +49,7 @@ def getPersons(page, listOfNouns, wikiLinksFile):
   for sentence in page.split("\n"):
     # parsing sentence with PAGE tag (PAGE FILTER)
     if "%%#PAGE" in sentence:
-      url = re.search('%%#PAGE.*\t(http[^\n]+)',sentence)
+      url = re.search('%%#PAGE.*\t(http[^\s]+)',sentence)
       if url:
         wikiLinksFile.write(url.group(1)+'\t')
         writeFirstSentence = True
@@ -36,7 +66,8 @@ def getPersons(page, listOfNouns, wikiLinksFile):
     else:
       # add first sentence from page to list for checking entities url
       if writeFirstSentence:
-        wikiLinksFile.write(re.sub(r'\|[\w.]+\]\]', ']]',sentence)+'\n')
+        verb, noun = getEntityInfo(sentence)
+        wikiLinksFile.write(verb+' '+noun+'\n')
         writeFirstSentence = False
       # parse only sentences with verb (VERB FILTER)
       if not re.search('\[([^\|]+\|V[^\|]+\|[^\]]+)\]',sentence):
