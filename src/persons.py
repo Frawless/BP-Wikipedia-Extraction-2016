@@ -19,7 +19,7 @@ def getPersons(page, listOfNouns, wikiLinksFile):
   for sentence in page.split("\n"):
     # parsing sentence with PAGE tag (PAGE FILTER)
     if "%%#PAGE" in sentence:
-      url = re.search('%%#PAGE.*\t([^\n]+)\s',sentence)
+      url = re.search('%%#PAGE.*\t(http[^\n]+)',sentence)
       if url:
         wikiLinksFile.write(url.group(1)+'\t')
         writeFirstSentence = True
@@ -36,7 +36,7 @@ def getPersons(page, listOfNouns, wikiLinksFile):
     else:
       # add first sentence from page to list for checking entities url
       if writeFirstSentence:
-        wikiLinksFile.write(re.sub(r'\|[^\]]+\]\]', '',sentence).replace('[[', '')+'\n')
+        wikiLinksFile.write(re.sub(r'\|[\w.]+\]\]', ']]',sentence)+'\n')
         writeFirstSentence = False
       # parse only sentences with verb (VERB FILTER)
       if not re.search('\[([^\|]+\|V[^\|]+\|[^\]]+)\]',sentence):
@@ -96,7 +96,7 @@ def getPersons(page, listOfNouns, wikiLinksFile):
                   realName += part + " "
 
               if realName is not "" and compareNames(realName,names):
-                output += realName + "\t" + pageURL + "\t" + re.sub(r'\|[^\]]+\]\]', '',sentence).replace('[[', '') + "\n"
+                output += realName[:-1] + "\t" + pageURL + "\t" + re.sub(r'\|[^\]]+\]\]', '',sentence).replace('[[', '') + "\n"
                 # zakomentováno -> odstranění duplicit
                 #names.append(real_name[:-1])
                 realName = ""

@@ -106,10 +106,9 @@ def extractNames(file, listOfNouns, outputFile, filename, wikiLinksFile):
   data = ""
   outputTags = ""
   page = ""
-  counterTST = 0
   for line in file:
     if "%%#PAGE" in line:
-      counterTST += 1
+      #wikiLinksFile.write(line)
       # add page link to file
       if len(page) > 0:
         # print page
@@ -132,7 +131,6 @@ def extractNames(file, listOfNouns, outputFile, filename, wikiLinksFile):
   # print data
   outputFile.write(data)
   print "\033[92mSoubor: " + filename + " dokončen.\033[0m"
-  print counterTST
 
 
 def createListOfNouns():

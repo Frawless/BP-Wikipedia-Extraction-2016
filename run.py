@@ -49,7 +49,7 @@ def concatUrlFiles():
   for file in glob.glob("/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/*.links"):
     os.remove(file)
   print bcolors.OKGREEN + "Soubor vytvořen!" + bcolors.ENDC
-  print bcolors.OKGREEN + "Počet řádků: {}".format(lineCounter) + bcolors.ENDC
+  print bcolors.OKGREEN + "Počet nalezených stránek: {}".format(lineCounter) + bcolors.ENDC
 
 # concat files with entity
 def concatFiles():

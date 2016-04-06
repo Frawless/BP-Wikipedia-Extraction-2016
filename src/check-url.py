@@ -18,6 +18,8 @@ import urllib.error
 
 import urllib
 
+import subprocess
+from subprocess import Popen, PIPE
 
 
 # THreading class
@@ -58,37 +60,6 @@ def deleteDuplucity():
   print ("End duplicity...")
   #os.remove('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/' + socket.gethostname() + '-non-page.tmp-entity')
 
-# metod for check entity url
-def checkURL():
-  counter = 0
-  # check url
-  outputFile = open("/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/" + socket.gethostname() + "-non-page.checked", 'w+')
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+ socket.gethostname() + '-non-page.check', 'r') as entityFile:
-    for entity in entityFile:
-      counter += 1
-      with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/all-wiki-links.aux', 'r') as urlFile:
-        writeEntity = True
-        for url in urlFile:
-          entityLink = "https://en.wikipedia.org/wiki/"+re.search('([^\t]+)\t[^\n]+',entity).group(1).replace(' ','_')
-          if entityLink[-1:] == '_':
-            entityLink = entityLink[:-1]
-
-          #print "URL: "+url+"# -> LINK: "+entityLink+"#"
-          if url[:-1] == entityLink:
-            writeEntity = False
-            #print "hoho"
-            break
-        if writeEntity:
-          outputFile.write(entity)
-        print  (counter)
-  outputFile.close()
-  entityFile.close()
-  urlFile.close()
-
-  # clearing *.tmp files
-  #for file in glob.glob("/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/*.tmp-entity"):
-    #os.remove(file)
-
 # Method for split entity files for more thread
 def splitFile():
   counter = 0
@@ -115,6 +86,7 @@ def splitFile():
   #return
   return fileCounter
 
+# Methond for re-join created files with checked entities
 def reJoinFiles():
   # joining checked files
   with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'-non-page.checked', 'w+') as outfile:
@@ -134,9 +106,8 @@ def reJoinFiles():
   # delete tmp dir -> toto se musí provést až po skončení vláken!!!
   shutil.rmtree('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/')
 
-
+# Method for thread
 def functionThread(threadName, threadNumber):
-  #time.sleep(5)
   file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.checked','w+')
   fileDel = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.deleted','w+')
   with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.tmp', 'r') as inputFile:
@@ -154,9 +125,8 @@ def functionThread(threadName, threadNumber):
 
   file.close()
   fileDel.close()
-  inputFile.close()
 
-
+# Method for raise multiple-thread for entity checking
 def checkMultiThreadURL(fileCount):
   d = {}
   counter = 0
@@ -166,8 +136,6 @@ def checkMultiThreadURL(fileCount):
 
   counter = 0
   while counter < fileCount:
-    #thread = myThread("Thread-"+str(counter), counter)
-    #thread.start()
     d[counter].start()
     counter += 1
   counter = 0
@@ -175,16 +143,35 @@ def checkMultiThreadURL(fileCount):
     d[counter].join()
     counter += 1
 
-  #funguje
-  '''thread0 = myThread("Thread-"+str(counter), 0)
-  thread1 = myThread("Thread-"+str(counter), 1)
-  thread2 = myThread("Thread-"+str(counter), 2)
-  thread0.start()
-  thread1.start()
-  thread2.start()
-  thread0.join()
-  thread1.join()
-  thread2.join()'''
+
+# metod for check entity url
+def checkURL(threadNumber):
+  verb = ""
+  noun = ""
+  #file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.checked','w+')
+  #fileDel = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.deleted','w+')
+  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.check', 'r') as entitySourceFile:
+    for entity in entitySourceFile:
+      with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/all-wiki-links.aux', 'r') as entityCheckFile:
+        for line in entityCheckFile:
+          entity = re.search('[^\t]+').group(1)
+          entityURL = 'https://en.wikipedia.org/wiki/'+entity.replace(' ','_')
+          if entityURL in line:
+            entitySourceInfo = re.search('http[^\t]+\t([^\n]+)',line)
+            for item in entitySourceInfo.split(" "):
+              if len(verb) > 0 and re.search('\[\[[^\|]+(V[^\]]+)', item):  # gather verb next to previsous verb
+                verb += re.search('\[\[([^\|]+)\|',item).group(1)
+              elif len(noun) > 0 and re.search('\[\[[^\|]+(N[^\]]+)',item): # gather noun next to previsous noun
+                noun += re.search('\[\[([^\|]+)\|',item).group(1)
+              elif len(verb) > 0 and re.search('\[\[[^\|]+(N[^\]]+)',item): # gather noun
+                noun += re.search('\[\[([^\|]+)\|',item).group(1)
+              elif re.search('\[\[[^\|]+(V[^\]]+)',item): # gather verb
+                verb += re.search('\[\[([^\|]+)\|',item).group(1)
+
+
+
+  #file.close()
+  #fileDel.close()
 
 #main
 if __name__ == "__main__":
@@ -193,9 +180,10 @@ if __name__ == "__main__":
   # checking url
   #checkURL()
   # TEST
-  fileCount = splitFile()
-  checkMultiThreadURL(fileCount)
-  reJoinFiles()
+  #fileCount = splitFile()
+  #checkMultiThreadURL(fileCount)
+  #reJoinFiles()
+  checkURL(1)
 
   sys.exit(0)
 
