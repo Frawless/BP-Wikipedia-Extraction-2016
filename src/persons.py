@@ -5,6 +5,9 @@
 
 import re
 
+###############################################################
+# ???
+###############################################################
 def getEntityInfo(sentence):
   verb = ""
   noun = ""
@@ -17,17 +20,6 @@ def getEntityInfo(sentence):
     verb = tmpVerb.group(1)
     noun = tmpVerb.group(2)
 
-  '''for item in sentence.split(" "):
-    tmpVerb = re.search('\[\[([^\|]+)\|V[^\|]+\|be\]\]', item)
-    tmpNoun = re.search('\[\[([^\|]+)\|N[^\]]+\]\]',item)
-    if len(verb) > 0 and tmpVerb:  # gather verb next to previsous verb
-      verb += " "+tmpVerb.group(1)
-    elif len(noun) > 0 and tmpNoun: # gather noun next to previsous noun
-      noun += " "+tmpNoun.group(1)
-    elif len(verb) > 0 and tmpNoun: # gather noun
-      noun += tmpNoun.group(1)
-    elif tmpVerb: # gather verb
-      verb += tmpVerb.group(1)'''
   #print verb+" "+noun
   if verb == "":
     verb = "uknown"
@@ -35,7 +27,10 @@ def getEntityInfo(sentence):
     noun = "uknown"
   return verb, noun
 
+###############################################################
 # Method for extract persons from current page
+# TODO - lehce rozdělit, zpřeheldnit, vylepšit tuto metodu
+###############################################################
 def getPersons(page, listOfNouns, wikiLinksFile):
   names = []
   output = ""
@@ -139,8 +134,9 @@ def getPersons(page, listOfNouns, wikiLinksFile):
   # return output -> maybe output[:-1] but in this case some entities are grouped together
   return output
 
-
+###############################################################
 # Method for compare entity name with entities with URL from current page
+###############################################################
 def compareNames(name, name_array):
   heurestic = 0
   if name in name_array:

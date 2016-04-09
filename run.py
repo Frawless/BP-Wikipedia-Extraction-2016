@@ -3,15 +3,18 @@
 # -*-: coding: utf-8 -*-
 # autor: Jakub Stejskal, xstejs24@stud.fit.vutbr.cz
 
+###############################################################
+# Imports
+###############################################################
 import sys  # stdin, stdout, stderr
 import os
 import subprocess
 import argparse
 import glob
-import re
 
-
-# class for terminal colors
+###############################################################
+# Class for terminal colors
+###############################################################
 class bcolors:
   HEADER = '\033[95m'
   OKBLUE = '\033[94m'
@@ -22,8 +25,9 @@ class bcolors:
   BOLD = '\033[1m'
   UNDERLINE = '\033[4m'
 
-
-# Function for parse input
+###############################################################
+# Method for parse input
+###############################################################
 def parseInput(tmp_input):
   str = raw_input("Enter your input (for more information start program with -h: ")
   print str
@@ -51,12 +55,24 @@ def concatUrlFiles():
   print bcolors.OKGREEN + "Soubor vytvořen!" + bcolors.ENDC
   print bcolors.OKGREEN + "Počet nalezených stránek: {}".format(lineCounter) + bcolors.ENDC
 
-# concat files with entity
+###############################################################
+# Method for concat files with entity
+###############################################################
 def concatFiles():
   nameArray = {}
   lineCounter = 0
+  # entities without page (not-checked redirect yet)
   with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/entity-non-page.none', 'w+') as outfile:
-     for filename in glob.glob(os.path.join('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/', '*.check')): #TODO - file *.checked !!!
+     for filename in glob.glob(os.path.join('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/', '*.checked')): #TODO - file *.checked !!!
+       print filename
+       with open(filename) as infile:
+         for line in infile:
+           lineCounter += 1
+           outfile.write(line)
+  outfile.close()
+  # delete entites -> they already have page (only or testing now)
+  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/entity-non-page.del', 'w+') as outfile:
+     for filename in glob.glob(os.path.join('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/', '*.deleted')):
        print filename
        with open(filename) as infile:
          for line in infile:
@@ -65,13 +81,16 @@ def concatFiles():
   outfile.close()
   print bcolors.WARNING + "Mažu pomocné soubory..." + bcolors.ENDC
   # clearing *.tmp files
-  #for file in glob.glob("/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/*.checked"):
-    #os.remove(file)
+  for file in glob.glob("/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/*.checked"):
+    os.remove(file)
+  for file in glob.glob("/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/*.deleted"):
+    os.remove(file)
   print bcolors.OKGREEN + "Soubor vytvořen!" + bcolors.ENDC
   print bcolors.OKGREEN + "Počet řádků: {}".format(lineCounter) + bcolors.ENDC
 
-
-# main
+###############################################################
+# Main
+###############################################################
 if __name__ == "__main__":
   tmp_input = "/mnt/minerva1/nlp/projects/ie_from_wikipedia7/input.tmp"
   # parse arguments
@@ -97,17 +116,15 @@ if __name__ == "__main__":
       print bcolors.FAIL + "Chyba na některém serveru" + bcolors.ENDC
       #sys.exit(1)
     print bcolors.OKGREEN + "Spouštím ověřování URL..." + bcolors.ENDC
-    '''if subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python3 /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/check-url.py ",shell=True) == 0:
+    if subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python3 /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/check-url.py ",shell=True) == 0:
       print bcolors.OKGREEN + "Dokončena kontrola URL!" + bcolors.ENDC + bcolors.OKGREEN + "Spouštím tvorbu výsledného souboru..." + bcolors.ENDC
       concatFiles()
       print bcolors.OKGREEN + "Done" + bcolors.ENDC
       sys.exit(0)
     else:
       print bcolors.FAIL + "Chyba na některém serveru" + bcolors.ENDC
-      sys.exit(1)'''
+      sys.exit(1)
   except OSError as e:
     print bcolors.FAIL + "Execution failed:" + bcolors.ENDC + "", e
 
   sys.exit(0)
-
-# 2 stroužky česneku, 3 lžičky sojovky, 4 lžíce majonézy, 1 a 1/2 lžíce medu, feferonka, sůl, rovná lžička papriky

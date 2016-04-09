@@ -2,27 +2,19 @@
 # coding: UTF-8
 # -*-: coding: utf-8 -*-
 
-import getopt  # parametry
+###############################################################
+# Imports
+###############################################################
 import sys  # stdin, stdout, stderr
 import re
-import os
-import subprocess
-import nltk
-
-# import XML parse
 import xml.etree.ElementTree as ET
 
-# FUNKCE parseOut
-# funkce pro zpracování výstupu dotazovače pomocí regexu
-# @param result - výstup z dotazovače
-# @return out - výstupní zpracovaný text
+###############################################################
+# Method for extract pages with prefix 'List of' from xml dump
+###############################################################
 def getListPage():
-  level = "\t"
-  xmlFile = ""
-  #List of Latin words with English derivatives
-  #listRegex = re.compile(r'List of Latin words with English derivatives|List of United States cities by population',re.I)
+  indentLevel = "\t"
   listRegex = re.compile(r'List of',re.I)
-
   count = 0
 
   isListPage = False
@@ -35,17 +27,13 @@ def getListPage():
   for event, elem in ET.iterparse('/mnt/minerva1/nlp/corpora_datasets/monolingual/english/wikipedia/enwiki-20160113-pages-articles.xml'):
     if event == 'end':
       if elem.tag == "{http://www.mediawiki.org/xml/export-0.10/}title":
-        tag = elem.tag.replace('{http://www.mediawiki.org/xml/export-0.10/}','')
-        #print elem.text
         counter += 1
         if listRegex.search(elem.text):
           count += 1
           isListPage = True
           count += 1
-          #file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/List_of/'+elem.text.replace(' ','_')+'.xml','w+')
           file.write('<page>\n')
-          file.write(level+'<title>'+unicode(elem.text).encode('utf-8')+'</title>\n')
-          xmlFile = ""
+          file.write(indentLevel+'<title>'+unicode(elem.text).encode('utf-8')+'</title>\n')
         elif isListPage:
           #file.close()
           isListPage = False
@@ -56,18 +44,18 @@ def getListPage():
         file.write('\t<'+tag+'>'+unicode(elem.text).encode('utf-8')+'</'+tag+'>\n')
       elif elem.tag == "{http://www.mediawiki.org/xml/export-0.10/}username" and isListPage:
         tag = elem.tag.replace('{http://www.mediawiki.org/xml/export-0.10/}','')
-        level = '\t\t'
+        indentLevel = '\t\t'
         file.write('\t<contributor>\n\t\t</'+tag+'>'+unicode(elem.text).encode('utf-8')+'</'+tag+'>\n')
       elif elem.tag == "{http://www.mediawiki.org/xml/export-0.10/}id" and isListPage:
         tag = elem.tag.replace('{http://www.mediawiki.org/xml/export-0.10/}','')
-        if level == '\t\t':
-          file.write(level+'<'+tag+'>'+unicode(elem.text).encode('utf-8')+'</'+tag+'>\n\t</contributor>\n')
+        if indentLevel == '\t\t':
+          file.write(indentLevel+'<'+tag+'>'+unicode(elem.text).encode('utf-8')+'</'+tag+'>\n\t</contributor>\n')
         else:
-          file.write(level+'<'+tag+'>'+unicode(elem.text).encode('utf-8')+'</'+tag+'>\n')
+          file.write(indentLevel+'<'+tag+'>'+unicode(elem.text).encode('utf-8')+'</'+tag+'>\n')
       elif elem.tag == "{http://www.mediawiki.org/xml/export-0.10/}page" and isListPage:
         tag = elem.tag.replace('{http://www.mediawiki.org/xml/export-0.10/}','')
         file.write('</page>\n')
-        level = '\t'
+        indentLevel = '\t'
       elif elem.tag == "{http://www.mediawiki.org/xml/export-0.10/}sha1" and isListPage:
         tag = elem.tag.replace('{http://www.mediawiki.org/xml/export-0.10/}','')
         file.write('\t<revision>\n\t\t</'+tag+'>'+unicode(elem.text).encode('utf-8')+'</'+tag+'>\n\t</revision>\n')
@@ -147,7 +135,9 @@ def clearText(text):
 
   return text
 
-# main
+###############################################################
+# Main
+###############################################################
 if __name__ == "__main__":
   # parsování
   getListPage()

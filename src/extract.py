@@ -99,8 +99,9 @@ def getInformationFromPage(file, task_list):
 
   outputTags = clearPage(page)
 
-
+###############################################################
 # Method for TODO
+###############################################################
 def extractNames(file, listOfNouns, outputFile, filename, wikiLinksFile):
   print "\033[93mZpracovávám soubor: " + filename + "\033[0m"
   data = ""
@@ -140,7 +141,9 @@ def createListOfNouns():
     listOfNouns.append(line[:-1])
   return listOfNouns
 
-# main
+###############################################################
+# Main
+###############################################################
 if __name__ == "__main__":
   input = sys.argv[1]
   array = []
