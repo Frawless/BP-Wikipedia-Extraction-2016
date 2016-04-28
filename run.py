@@ -59,7 +59,6 @@ def concatUrlFiles():
 # Method for concat files with entity
 ###############################################################
 def concatFiles():
-  nameArray = {}
   lineCounter = 0
   # entities without page (not-checked redirect yet)
   with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/entity-non-page.none', 'w+') as outfile:
@@ -97,19 +96,21 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Wiki extractor argument parser')
   requiredArguments = parser.add_argument_group('required arguments')
   requiredArguments.add_argument('-s', '--servers', action="store", dest="servers", help='Add path to server list', required=True)
-  parser.add_argument('-i', '--input', action="store", dest="input", help='Input file with information for verify')
+  #parser.add_argument('-i', '--input', action="store", dest="input", help='Input file with information for verify')
   results = parser.parse_args()
 
-  # parse
-  if results.input is None:
+  # parse - na QA - smazat asi?
+  '''if results.input is None:
     parseInput(tmp_input)
-    results.input = tmp_input
+    results.input = tmp_input'''
 
   # connect to servers
   try:
-    if subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/extract.py " + results.input,shell=True) == 0:
-      print bcolors.OKGREEN + "Dokončena extrakce!" + bcolors.ENDC + bcolors.OKGREEN + "Spouštím tvorbu URL souboru..." + bcolors.ENDC
-      concatUrlFiles()
+    if subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/extract.py ",shell=True) == 0:
+      #print bcolors.OKGREEN + "Dokončena extrakce!" + bcolors.ENDC + bcolors.OKGREEN + "Spouštím tvorbu URL souboru..." + bcolors.ENDC
+      print bcolors.OKGREEN + "Dokončena extrakce!"+bcolors.ENDC
+      sys.exit(0)
+      '''concatUrlFiles()
       print bcolors.OKGREEN + "Done" + bcolors.ENDC
       #sys.exit(0)
     else:
@@ -123,8 +124,9 @@ if __name__ == "__main__":
       sys.exit(0)
     else:
       print bcolors.FAIL + "Chyba na některém serveru" + bcolors.ENDC
-      sys.exit(1)
+      sys.exit(1)'''
   except OSError as e:
     print bcolors.FAIL + "Execution failed:" + bcolors.ENDC + "", e
 
+  #concatFiles()
   sys.exit(0)

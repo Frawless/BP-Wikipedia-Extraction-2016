@@ -10,7 +10,7 @@ import argparse
 import re
 
 
-# Function for find some information from user in text (not Influence and List pages)
+# Function for find some information from user in text
 def checkInformation(outputTags, find, task_list):
   tmp_array = []
   tmp_array = list(find)

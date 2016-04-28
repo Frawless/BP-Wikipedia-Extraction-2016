@@ -24,13 +24,14 @@ class myThread (threading.Thread):
         self.threadID = threadID
         self.name = name
     def run(self):
-        print ("Starting " + self.name)
+        #print ("Starting " + self.name)
         checkURLwithArticles(self.threadID)
+        #print ("Second fce " + self.name)
         checkURLwithRedirects(self.threadID)
-        print ("Exiting " + self.name)
+        #print ("Exiting " + self.name)
 
 ###############################################################
-# Method for delete duplicity in enttiy files
+# Method for delete duplicity in enttiy files  TODO vyřešeno v persons.py -> otestovat rychlost
 ###############################################################
 def deleteDuplucity():
   previousLine = ""
@@ -72,7 +73,7 @@ def splitFile():
   with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/' + socket.gethostname() + '-non-page.check', 'r') as inputFile:
     for line in inputFile:
       counter += 1
-      if counter%5000 == 0:
+      if counter%4000 == 0:
         currentFile.close()
         fileNumber += 1
         currentFile = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(fileNumber)+'.tmp','w+')
@@ -136,7 +137,6 @@ def checkMultiThreadURL(fileCount):
 # Method for check if entity from URL is same as from text
 ###############################################################
 def compareEntities(verb,noun,line):
-  print ("V: "+verb+" N: "+noun+" E: "+line)
   heurestic = 0
   for item in verb.split(' '):
     if item in line:
@@ -144,7 +144,6 @@ def compareEntities(verb,noun,line):
   for item in noun.split(' '):
     if item in line:
       heurestic += 4
-  print (heurestic)
   return True if heurestic > 4 else False
 
 ###############################################################
@@ -186,12 +185,12 @@ def checkURLwithRedirects(threadNumber):
       entityName = re.search('([^\t]+)[^\n]+',entity).group(1)[:-1]
       entityURL = 'https://en.wikipedia.org/wiki/'+entityName.replace(' ','_')
       # grep info from URL file
-      p = subprocess.Popen(['grep','-n', '-s',entityURL,'/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/redirectedLinks.links'],stdout=subprocess.PIPE)
+      p = subprocess.Popen(['grep','-n', '-s',entityURL,'/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/redirectedLinks.redirect'],stdout=subprocess.PIPE)
       output = p.communicate()[0]
 
       #entityInfo = re.search('[^\t]+\t([^\s]+)\s([^\s]+)\n',str(output).replace('\\t','\t').replace('\\n','\n'))
-      if 'None' in output:
-          fileDel.write(entity)
+      if "b''" in str(output):
+        fileDel.write(entity)
       else:
         file.write(entity)
   file.close()

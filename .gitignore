@@ -16,3 +16,5 @@ test/
 *.otd
 *.mg4j
 *.in
+*.zip
+PyWikiBot/
