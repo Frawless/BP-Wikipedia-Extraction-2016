@@ -11,6 +11,13 @@ import os
 import subprocess
 import argparse
 import glob
+import os.path
+import re
+
+###############################################################
+# Constants
+###############################################################
+PathPrefix = '/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'
 
 ###############################################################
 # Class for terminal colors
@@ -36,13 +43,13 @@ def parseInput(tmp_input):
   f.write(str)
   f.close
 
+###############################################################
+# Method for complete all found links into one file
+###############################################################
 def concatUrlFiles():
-  nameArray = {}
-  previousLine = ""
-  addLine = ""
   lineCounter = 0
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/all-wiki-links.aux', 'w+') as outfile:
-     for filename in glob.glob(os.path.join('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/', '*.links')):
+  with open(PathPrefix+'Wikilinks/all-wiki-links.aux', 'w+') as outfile:
+     for filename in glob.glob(os.path.join(PathPrefix+'Wikilinks/', '*.links')):
        with open(filename) as infile:
          for line in infile:
            lineCounter += 1
@@ -50,7 +57,7 @@ def concatUrlFiles():
   outfile.close()
   print bcolors.WARNING + "Mažu pomocné soubory..." + bcolors.ENDC
   # clearing *.tmp files
-  for file in glob.glob("/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/*.links"):
+  for file in glob.glob(PathPrefix+'Wikilinks/*.links'):
     os.remove(file)
   print bcolors.OKGREEN + "Soubor vytvořen!" + bcolors.ENDC
   print bcolors.OKGREEN + "Počet nalezených stránek: {}".format(lineCounter) + bcolors.ENDC
@@ -61,72 +68,123 @@ def concatUrlFiles():
 def concatFiles():
   lineCounter = 0
   # entities without page (not-checked redirect yet)
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/entity-non-page.none', 'w+') as outfile:
-     for filename in glob.glob(os.path.join('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/', '*.checked')): #TODO - file *.checked !!!
-       print filename
+  with open(PathPrefix+'entity-non-page.none', 'w+') as outfile:
+     for filename in glob.glob(os.path.join(PathPrefix+'CheckedLinks', '*.checked')):
        with open(filename) as infile:
          for line in infile:
            lineCounter += 1
            outfile.write(line)
   outfile.close()
   # delete entites -> they already have page (only or testing now)
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/entity-non-page.del', 'w+') as outfile:
-     for filename in glob.glob(os.path.join('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/', '*.deleted')):
-       print filename
+  with open(PathPrefix+'entity-non-page.del', 'w+') as outfile:
+     for filename in glob.glob(os.path.join(PathPrefix+'Deleted/', '*.deleted')):
        with open(filename) as infile:
          for line in infile:
-           lineCounter += 1
            outfile.write(line)
   outfile.close()
   print bcolors.WARNING + "Mažu pomocné soubory..." + bcolors.ENDC
   # clearing *.tmp files
-  for file in glob.glob("/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/*.checked"):
+  for file in glob.glob(PathPrefix+'CheckedLinks/*.checked'):
     os.remove(file)
-  for file in glob.glob("/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/*.deleted"):
+  for file in glob.glob(PathPrefix+'Deleted/*.deleted'):
     os.remove(file)
   print bcolors.OKGREEN + "Soubor vytvořen!" + bcolors.ENDC
-  print bcolors.OKGREEN + "Počet řádků: {}".format(lineCounter) + bcolors.ENDC
+  print bcolors.OKGREEN + "Počet nalezených entit bez článku: {}".format(lineCounter) + bcolors.ENDC
+
+###############################################################
+# Method for check create subfolders
+###############################################################
+def createFolders():
+  if not os.path.exists(PathPrefix+'ExtractedEntity'):
+    print ("Vytvářím složku: ExtractedEntity")
+    os.makedirs(PathPrefix+'ExtractedEntity')
+  if not os.path.exists(PathPrefix+'Wikilinks'):
+    print ("Vytvářím složku: Wikilinks")
+    os.makedirs(PathPrefix+'Wikilinks')
+  if not os.path.exists(PathPrefix+'CheckedLinks'):
+    print ("Vytvářím složku: CheckedLinks")
+    os.makedirs(PathPrefix+'CheckedLinks')
+  if not os.path.exists(PathPrefix+'Deleted'):
+    print ("Vytvářím složku: Deleted")
+    os.makedirs(PathPrefix+'Deleted')
+
+###############################################################
+# Method for check exists files (already extracted entity with system)
+###############################################################
+def checkExtractedData(servers):
+  with open (servers) as serversFile:
+    for server in serversFile:
+      serverName = re.search('([^\.]+)\.fit\.vutbr\.cz',server).group(1)
+      if not os.path.exists(PathPrefix+'ExtractedEntity/'+serverName+'-non-page.tmp-entity'):
+        return False
+  return True
+
+###############################################################
+# Method for check exists files (already checked with system)
+###############################################################
+def checkCheckedData(servers):
+  with open (servers) as serversFile:
+    for server in serversFile:
+      serverName = re.search('([^\.]+)\.fit\.vutbr\.cz',server).group(1)
+      if not os.path.exists(PathPrefix+'CheckedLinks/'+serverName+'.checked'):
+        return False
+  return True
+
+###############################################################
+# Method for start parallel shh and extraction on all machines
+###############################################################
+def startExtraction(results):
+  if not checkExtractedData(results.servers) or results.force:
+    print bcolors.WARNING + "Spouštím extrakci..."+bcolors.ENDC
+    subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/extract.py ",shell=True)
+    print bcolors.OKGREEN + "Dokončena extrakce!"+bcolors.ENDC
+
+  if not os.path.exists(PathPrefix+'Wikilinks/all-wiki-links.aux') or results.force:
+    print bcolors.OKGREEN + "Spouštím tvorbu URL souboru..." + bcolors.ENDC
+    concatUrlFiles()
+
+  if not checkCheckedData(results.servers) or results.force:
+    print bcolors.WARNING + "Spouštím kontrolu odkazů..."+bcolors.ENDC
+    subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python3 /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/check-url.py ",shell=True)
+    print bcolors.OKGREEN + "Dokončena kontrola URL!" + bcolors.ENDC + bcolors.OKGREEN + "Spouštím tvorbu výsledného souboru..." + bcolors.ENDC
+    concatFiles()
 
 ###############################################################
 # Main
 ###############################################################
 if __name__ == "__main__":
-  tmp_input = "/mnt/minerva1/nlp/projects/ie_from_wikipedia7/input.tmp"
   # parse arguments
   parser = argparse.ArgumentParser(description='Wiki extractor argument parser')
   requiredArguments = parser.add_argument_group('required arguments')
   requiredArguments.add_argument('-s', '--servers', action="store", dest="servers", help='Add path to server list', required=True)
   #parser.add_argument('-i', '--input', action="store", dest="input", help='Input file with information for verify')
+  optionalArguments = parser.add_argument_group('optional arguments')
+  parser.add_argument('-f', '--force', action="store_true", help='Re-write all extracted data by force')
+  parser.add_argument('-a', '--allentity', action="store_true", help='System will extract all entity from input')
   results = parser.parse_args()
-
-  # parse - na QA - smazat asi?
-  '''if results.input is None:
-    parseInput(tmp_input)
-    results.input = tmp_input'''
 
   # connect to servers
   try:
-    if subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/extract.py ",shell=True) == 0:
-      #print bcolors.OKGREEN + "Dokončena extrakce!" + bcolors.ENDC + bcolors.OKGREEN + "Spouštím tvorbu URL souboru..." + bcolors.ENDC
+    createFolders()  # create folders
+
+    if not checkExtractedData(results.servers) or results.force:
+      print bcolors.WARNING + "Spouštím extrakci..."+bcolors.ENDC
+      subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/extract.py ",shell=True)
       print bcolors.OKGREEN + "Dokončena extrakce!"+bcolors.ENDC
-      sys.exit(0)
-      '''concatUrlFiles()
-      print bcolors.OKGREEN + "Done" + bcolors.ENDC
-      #sys.exit(0)
-    else:
-      print bcolors.FAIL + "Chyba na některém serveru" + bcolors.ENDC
-      #sys.exit(1)
-    print bcolors.OKGREEN + "Spouštím ověřování URL..." + bcolors.ENDC
-    if subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python3 /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/check-url.py ",shell=True) == 0:
+
+    if not os.path.exists(PathPrefix+'Wikilinks/all-wiki-links.aux') or results.force:
+      print bcolors.OKGREEN + "Spouštím tvorbu URL souboru..." + bcolors.ENDC
+      concatUrlFiles()
+
+    if not checkCheckedData(results.servers) or results.force:
+      print bcolors.WARNING + "Spouštím kontrolu odkazů..."+bcolors.ENDC
+      subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python3 /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/check-url.py ",shell=True)
       print bcolors.OKGREEN + "Dokončena kontrola URL!" + bcolors.ENDC + bcolors.OKGREEN + "Spouštím tvorbu výsledného souboru..." + bcolors.ENDC
       concatFiles()
-      print bcolors.OKGREEN + "Done" + bcolors.ENDC
-      sys.exit(0)
-    else:
-      print bcolors.FAIL + "Chyba na některém serveru" + bcolors.ENDC
-      sys.exit(1)'''
+
   except OSError as e:
     print bcolors.FAIL + "Execution failed:" + bcolors.ENDC + "", e
 
-  #concatFiles()
   sys.exit(0)
+
+# KILL-ALL -> parallel-ssh -t 0 -i -h servers.txt -A pkill -u xstejs24

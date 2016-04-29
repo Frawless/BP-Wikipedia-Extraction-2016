@@ -16,22 +16,20 @@ import glob
 import subprocess
 
 ###############################################################
-# Tgreading class
+# Threading class
 ###############################################################
 class myThread (threading.Thread):
-    def __init__(self, name, threadID):
-        threading.Thread.__init__(self)
-        self.threadID = threadID
-        self.name = name
-    def run(self):
-        #print ("Starting " + self.name)
-        checkURLwithArticles(self.threadID)
-        #print ("Second fce " + self.name)
-        checkURLwithRedirects(self.threadID)
-        #print ("Exiting " + self.name)
+  def __init__(self, name, threadID):
+    threading.Thread.__init__(self)
+    self.threadID = threadID
+    self.name = name
+  def run(self):
+    checkURLwithArticles(self.threadID)
+    checkURLwithRedirects(self.threadID)
 
 ###############################################################
-# Method for delete duplicity in enttiy files  TODO vyřešeno v persons.py -> otestovat rychlost
+# Method for delete duplicity in enttiy files
+# TODO vyřešeno v persons.py
 ###############################################################
 def deleteDuplucity():
   previousLine = ""
@@ -66,24 +64,26 @@ def splitFile():
   counter = 0
   fileNumber = 0
   fileCounter = 1
-  if not os.path.exists('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()):
+  if not os.path.exists('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/CheckedLinks/'+socket.gethostname()):
     print ("Vytvářím složku: "+socket.gethostname())
-    os.makedirs('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname())
-  currentFile = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(fileNumber)+'.tmp','w+')
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/' + socket.gethostname() + '-non-page.check', 'r') as inputFile:
+    os.makedirs('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/CheckedLinks/'+socket.gethostname())
+  if not os.path.exists('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/Deleted/'+socket.gethostname()):
+    print ("Vytvářím složku: "+socket.gethostname())
+    os.makedirs('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/Deleted/'+socket.gethostname())
+  currentFile = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/CheckedLinks/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(fileNumber)+'.tmp','w+')
+  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/ExtractedEntity/' + socket.gethostname() + '-non-page.tmp-entity', 'r') as inputFile:
     for line in inputFile:
       counter += 1
-      if counter%4000 == 0:
+      if counter%10000 == 0:
         currentFile.close()
         fileNumber += 1
-        currentFile = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(fileNumber)+'.tmp','w+')
+        currentFile = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/CheckedLinks/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(fileNumber)+'.tmp','w+')
         fileCounter += 1
         #break
       currentFile.write(line)
   # closing files and delting tmp folder
   currentFile.close()
   inputFile.close()
-  os.remove('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/' + socket.gethostname() + '-non-page.check')
   #return
   return fileCounter
 
@@ -93,22 +93,23 @@ def splitFile():
 def reJoinFiles():
   print ("Start reJoinFiles()...")
   # joining checked files
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'-non-page.checked', 'w+') as outfile:
-    for filename in glob.glob(os.path.join('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname(), '*.checked')):
+  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/CheckedLinks/'+socket.gethostname()+'-non-page.checked', 'w+') as outfile:
+    for filename in glob.glob(os.path.join('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/CheckedLinks/'+socket.gethostname(), '*.checked')):
       with open(filename) as infile:
          for line in infile:
            outfile.write(line)
   outfile.close()
 
   # joining checked files
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'-non-page.deleted', 'w+') as delFile:
-    for filename in glob.glob(os.path.join('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname(), '*.deleted')):
+  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/Deleted/'+socket.gethostname()+'-non-page.deleted', 'w+') as delFile:
+    for filename in glob.glob(os.path.join('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/Deleted/'+socket.gethostname(), '*.deleted')):
       with open(filename) as infile:
          for line in infile:
            delFile.write(line)
   delFile.close()
-  # delete tmp dir -> toto se musí provést až po skončení vláken!!!
-  shutil.rmtree('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/',ignore_errors=True)
+  # delete tmp fodlers
+  shutil.rmtree('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/CheckedLinks/'+socket.gethostname()+'/',ignore_errors=True)
+  shutil.rmtree('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/Deleted/'+socket.gethostname()+'/',ignore_errors=True)
 
 ###############################################################
 # Method for raise multiple-thread for entity checking
@@ -135,6 +136,7 @@ def checkMultiThreadURL(fileCount):
 
 ###############################################################
 # Method for check if entity from URL is same as from text
+# TODO - chtělo by to trošku vylepšit, uvidíme dle výsledků
 ###############################################################
 def compareEntities(verb,noun,line):
   heurestic = 0
@@ -143,23 +145,23 @@ def compareEntities(verb,noun,line):
       heurestic += 1
   for item in noun.split(' '):
     if item in line:
-      heurestic += 4
-  return True if heurestic > 4 else False
+      heurestic += 3
+  return True if heurestic > len(noun.split(' ')) * 3 else False
 
 ###############################################################
 # Method for check entity url from articles URLs from mg4j files
 ###############################################################
 def checkURLwithArticles(threadNumber):
-  file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.tmp-checked','w+')
-  fileDel = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.deleted','w+')
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.tmp', 'r') as entitySourceFile:
+  file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/CheckedLinks/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.tmp-checked','w+')
+  fileDel = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/Deleted/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.deleted','w+')
+  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/CheckedLinks/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.tmp', 'r') as entitySourceFile:
     for entity in entitySourceFile:
       entityName = re.search('([^\t]+)[^\n]+',entity).group(1)[:-1]
       entityURL = 'https://en.wikipedia.org/wiki/'+entityName.replace(' ','_')
       # grep info from URL file
-      p = subprocess.Popen(['grep','-n', '-s',entityURL,'/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/all-wiki-links.aux'],stdout=subprocess.PIPE)
+      p = subprocess.Popen(['grep','-n', '-s',entityURL,'/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/Wikilinks/all-wiki-links.aux'],stdout=subprocess.PIPE)
       output = p.communicate()[0]
-
+      # extract entity info from grep output
       entityInfo = re.search('[^\t]+\t([^\s]+)\s([^\s]+)\n',str(output).replace('\\t','\t').replace('\\n','\n'))
       if entityInfo:
         verb = entityInfo.group(1)
@@ -173,35 +175,36 @@ def checkURLwithArticles(threadNumber):
         file.write(entity)
   file.close()
   fileDel.close()
+  print ("Dokončena první kontrola odkazů.")
 
 ###############################################################
 # Method for check entity url with extracetd redirected URL form xml dump
 ###############################################################
 def checkURLwithRedirects(threadNumber):
-  file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.checked','w+')
-  fileDel = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.deleted','a+')
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.tmp-checked', 'r') as entitySourceFile:
+  file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/CheckedLinks/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.checked','w+')
+  fileDel = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/Deleted/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.deleted','a+')
+  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/CheckedLinks/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(threadNumber)+'.tmp-checked', 'r') as entitySourceFile:
     for entity in entitySourceFile:
       entityName = re.search('([^\t]+)[^\n]+',entity).group(1)[:-1]
       entityURL = 'https://en.wikipedia.org/wiki/'+entityName.replace(' ','_')
       # grep info from URL file
       p = subprocess.Popen(['grep','-n', '-s',entityURL,'/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/redirectedLinks.redirect'],stdout=subprocess.PIPE)
       output = p.communicate()[0]
-
-      #entityInfo = re.search('[^\t]+\t([^\s]+)\s([^\s]+)\n',str(output).replace('\\t','\t').replace('\\n','\n'))
+      # check if grep found entity
       if "b''" in str(output):
         fileDel.write(entity)
       else:
         file.write(entity)
   file.close()
   fileDel.close()
+  print ("Dokončena druhá kontrola odkazů.")
 
 ###############################################################
 # Main
 ###############################################################
 if __name__ == "__main__":
-  deleteDuplucity() # delete entity duplicity
-  fileCount = splitFile() # split entity file for multi-hreading
+  #deleteDuplucity() # delete entity duplicity
+  fileCount = splitFile() # split entity file for multi-threading
   checkMultiThreadURL(fileCount)  # create more threads on server for checking entities url on wiki
   reJoinFiles() # re-join splited files
 

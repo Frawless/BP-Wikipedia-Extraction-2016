@@ -8,16 +8,19 @@ import sys
 import socket
 import json
 import time
-from elasticsearch import Elasticsearch
 
-
+###############################################################
+# Class for persone xtract
+###############################################################
 class PersonClass:
-  # init
-  def __init__(self, entityID,linkID):
-      self.entityID = entityID
-      self.linkID = linkID
   ###############################################################
-  # ???
+  # Class init
+  ###############################################################
+  def __init__(self, wikiLinks, listOfNouns):
+      self.wikiLinks = wikiLinks
+      self.listOfNouns = listOfNouns
+  ###############################################################
+  # Method for parse basic information about entity from article
   ###############################################################
   def getEntityInfo(self,sentence):
     verb = ""
@@ -42,8 +45,6 @@ class PersonClass:
       if noun in token:
         findNoun = True
 
-
-    #print verb+" "+noun
     if verb == "":
       verb = "uknown"
     if noun == "":
@@ -67,66 +68,17 @@ class PersonClass:
         found[item.group(1)] = item.group(2)+'\t'+item.group(3)
 
     for key in found:
-      url = re.search('([^\t]+)\t([^\n]+)',found[key])
-      self.insertEntity(key,url.group(1),url.group(2))
       output += key+'\t'+found[key]+'\n'
-
-  ###############################################################
-  # Method for Elastic insert Wikilinks
-  ###############################################################
-  def insertWikilinks(self,link):
-    # nastavení databáze elastic search
-    HOST        = 'athena1.fit.vutbr.cz'
-    PORT        = 9200
-    DOCTYPE     = 'wikilinks'
-    IDXPROJ     = 'xstejs24_extractor'
-
-    # DB connect
-    es = Elasticsearch(host=HOST, port=PORT)
-
-    # new input
-    inputLink = {'id': socket.gethostname()+'-'+str(self.linkID),'url': link[0], 'redirect' : False, 'url-redirected': 'none', 'verb': link[1], 'noun': link[2] }
-    # insert
-    es.index(index=IDXPROJ, doc_type=DOCTYPE, id=socket.gethostname()+'-'+str(self.linkID), body=inputLink)
-    self.linkID += 1
-    if self.linkID % 15000 == 0:
-      print "Šlofík..."
-      time.sleep(60)
-
-  ###############################################################
-  # Method for Elastic insert entity
-  ###############################################################
-  def insertEntity(self,entity, url, sentences):
-    appereance = '['
-    # nastavení databáze elastic search
-    HOST        = 'athena1.fit.vutbr.cz'
-    PORT        = 9200
-    DOCTYPE     = 'extracted'
-    IDXPROJ     = 'xstejs24_extractor'
-
-    for item in sentences.split('|'):
-      appereance += '{"sentence": "'+item.replace('"','')+'"}, '
-
-    appereance = '{"sentences": '+appereance[:-2]+']}'
-    #print appereance
-    #appereance = json.loads(appereance)
-    appereance = json.dumps(appereance)
-
-    # DB connect
-    es = Elasticsearch(host=HOST, port=PORT)
-    # new input
-    inputLink = {'id': socket.gethostname()+'-'+str(self.entityID),'host': socket.gethostname(), 'entity' : entity, 'url': url, 'doc': appereance}
-    # insert
-    es.index(index=IDXPROJ, doc_type=DOCTYPE, id=socket.gethostname()+'-'+str(self.entityID), body=inputLink)
-    self.entityID += 1
+    # return statement
+    return output
 
   ###############################################################
   # Method for extract persons from current page
   # TODO - lehce rozdělit, zpřeheldnit, vylepšit tuto metodu
   ###############################################################
-  def getPersons(self,page, listOfNouns, wikiLinksFile):
+  def getPersons(self,page):
     names = []
-    link = []
+    link = ""
     output = ""
     realName = ""
     parsedName = ""
@@ -140,8 +92,7 @@ class PersonClass:
       if "%%#PAGE" in sentence:
         url = re.search('%%#PAGE.*\t(http[^\s]+)',sentence)
         if url:
-          link.append(url.group(1))
-          #wikiLinksFile.write(url.group(1)+'\t')
+          link = url.group(1)
           writeFirstSentence = True
         if "entity=" in sentence:
           entity = re.search(r'[^ ]+ ([^\t]+)\t(http[^\s]+)\sentity=([^\s]+)', sentence)
@@ -157,11 +108,7 @@ class PersonClass:
         # add first sentence from page to list for checking entities url
         if writeFirstSentence:
           verb, noun = self.getEntityInfo(sentence)
-          #wikiLinksFile.write(verb+' '+noun+'\n')
-          link.append(verb)
-          link.append(noun)
-          self.insertWikilinks(link)
-          #link[1], link[2] = getEntityInfo(sentence)
+          self.wikiLinks.write(link+'\t'+verb+' '+noun+'\n')
           writeFirstSentence = False
         # parse only sentences with verb (VERB FILTER)
         if not re.search('\[([^\|]+\|V[^\|]+\|[^\]]+)\]',sentence):
@@ -203,7 +150,7 @@ class PersonClass:
                 continue
               if set:
                 for part in parsedName.split(" "):
-                  if part.lower() in listOfNouns:
+                  if part.lower() in self.listOfNouns:
                     parsedName = ""
                     realName = ""
                     break
@@ -212,15 +159,16 @@ class PersonClass:
                     realName += part + " "
 
                 if realName is not "" and self.compareNames(realName,names):
-                  output += realName[:-1] + "\t" + pageURL + "\t" + re.sub(r'\|[^\]]+\]\]', '',sentence).replace('[[', '') + "\n"
+                  #output += realName[:-1] + "\t" + pageURL + "\t" + re.sub(r'\|[^\]]+\]\]', '',sentence).replace('[[', '') + "\n"
+                  # test pro věty s anotacemi
+                  output += realName[:-1] + "\t" + pageURL + "\t" + sentence + "\n"
                   realName = ""
                   parsedName = ""
                   set = False
                 else:
                   realName = ""
     # return output -> maybe output[:-1] but in this case some entities are grouped together
-    self.deleteDuplicity(output)
-    return self.entityID, self.linkID
+    return self.deleteDuplicity(output)
 
   ###############################################################
   # Method for compare entity name with entities with URL from current page

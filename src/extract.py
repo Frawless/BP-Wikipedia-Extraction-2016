@@ -15,12 +15,20 @@ import socket
 # import of created modules
 import find
 import persons
+import run
 
+###############################################################
+# Extractor class
+###############################################################
 class Extract:
-  #init
+  ###############################################################
+  # Class init
+  ###############################################################
   def __init__(self):
-    self.entityID = 0
-    self.linkID = 0
+    self.wikiLinks = open(PathPrefix+'Wikilinks/' + socket.gethostname() + '.links', 'w+')
+    self.outputFile = open(PathPrefix+'ExtractedEntity/' + socket.gethostname() + '-non-page.tmp-entity', 'w+')
+    self.listOfNouns = self.createListOfNouns()
+
   ###############################################################
   # Method for clear page
   ###############################################################
@@ -64,15 +72,15 @@ class Extract:
             parsedPage += "[[" + re.sub('\s+', '|', tmp.group(1)) + "]] "
     return parsedPage
 
-  # Method for TODO
+  ###############################################################
+  # Method for QA
+  ###############################################################
   def getInformationFromPage(self, file, task_list):
     for line in file:
       if "%%#PAGE" in line:
         # extract text
         if len(array) > 0:
           outputTags = self.clearPage(page)
-          #print outputTags
-          # print outputText
           if "%%#PAGE Influence" in pageTitle:
             task_list = find.checkInfluencePages(outputTags, array, task_list)
           else:
@@ -103,42 +111,35 @@ class Extract:
     outputTags = self.clearPage(page)
 
   ###############################################################
-  # Method for TODO
+  # Method for extract single entity
   ###############################################################
-  def extractNames(self, file, listOfNouns, outputFile, wikiLinksFile, id):
+  def extractNames(self, file):
     data = ""
-    outputTags = ""
-    person = persons.PersonClass(self.entityID, self.linkID )
+    person = persons.PersonClass(self.wikiLinks, self.listOfNouns)
     page = ""
     for line in file:
       if "%%#PAGE" in line:
-        #wikiLinksFile.write(line)
         # add page link to file
         if len(page) > 0:
-          # print page
+          ###############################################################
           page = self.clearPage(page) + "\n"
-          # print page
-          # print "###################################################"
-          #data += persons.getPersons(page, listOfNouns, wikiLinksFile, id)
-          self.entityID, self.linkID = person.getPersons(page, listOfNouns, wikiLinksFile)
-          # print data
-          # print "###################################################"
+          data += person.getPersons(page)
+          ###############################################################
           page = ""
         # extract text
         page += line
-
       elif "%%#DOC" not in line and "%%#PAR" not in line:
         page += line
-
+    ###############################################################
     page += self.clearPage(page) + "\n"
-    self.entityID, self.linkID = person.getPersons(page, listOfNouns, wikiLinksFile)
-    #data += persons.getPersons(page, listOfNouns, wikiLinksFile);
+    data += person.getPersons(page)
+    ###############################################################
     page = ""
-    # print data
-    outputFile.write(data)
-    #print "\033[92mSoubor: " + filename + " dokončen.\033[0m"
+    self.outputFile.write(data)
 
-
+  ###############################################################
+  # Method for collect most using nouns
+  ###############################################################
   def createListOfNouns(self):
     listOfNouns = []
     file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/list_of_nouns', 'r')
@@ -157,12 +158,7 @@ if __name__ == "__main__":
   page = ""
   id = 0
   extractor = Extract()
-  # wikiLinks from each server
-  wikiLinksFile = open("/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/" + socket.gethostname() + ".links", 'w+')
-  # output file with entity
-  outputFile = open("/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/" + socket.gethostname() + "-non-page.tmp-entity", 'w+')
 
-  listOfNouns = extractor.createListOfNouns()
   #input_list = find.parseInput(input)  # create input_list -> QA
   #task_list = find.parseList(input_list)  # create task list -> QA
 
@@ -173,9 +169,10 @@ if __name__ == "__main__":
   #if True:
     file = open(filename, 'r')
     # getInformationFromPage(file,task_list)
-    extractor.extractNames(file, listOfNouns, outputFile,wikiLinksFile, id)
+    extractor.extractNames(file)
 
   #task_list = find.setFoundFalse(task_list)
-  outputFile.close()
+  extractor.wikiLinks.close()
+  extractor.outputFile.close()
 
   sys.exit(0)

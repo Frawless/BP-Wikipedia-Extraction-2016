@@ -3,6 +3,7 @@
 
 import sys
 import socket
+import json
 # knihovna
 from elasticsearch import Elasticsearch
 
@@ -31,12 +32,12 @@ def createDB():
   proj_mapping = {
       'wikilinks': {
           'properties': {
-              'id':             {'type':'string'},
-              'url':            {'type':'string'},
-              'redirect':       {'type':'boolean'},
-              'url-redirected': {'type':'string' },
-              'verb':           {'type':'string' },
-              'noun':           {'type':'string' },
+              'id':             {'type':'string','index': 'not_analyzed'},
+              'url':            {'type':'string','index': 'not_analyzed'},
+              'redirect':       {'type':'boolean','index': 'not_analyzed'},
+              'url-redirected': {'type':'string','index': 'not_analyzed'},
+              'verb':           {'type':'string','index': 'not_analyzed'},
+              'noun':           {'type':'string','index': 'not_analyzed'},
           }
       },
       'extracted': {
@@ -163,6 +164,33 @@ def createDB():
       print item.get('_source').get('flags')'''
 
 
+  ###############################################################
+  # Method for Elastic insert entity
+  ###############################################################
+  def insertEntity(self,entity, url, sentences):
+    appereance = '['
+    # nastavení databáze elastic search
+    HOST        = 'athena1.fit.vutbr.cz'
+    PORT        = 9200
+    DOCTYPE     = 'extracted'
+    IDXPROJ     = 'xstejs24_extractor'
+
+    for item in sentences.split('|'):
+      appereance += '{"sentence": "'+item.replace('"','')+'"}, '
+
+    appereance = '{"sentences": '+appereance[:-2]+']}'
+    #print appereance
+    #appereance = json.loads(appereance)
+    appereance = json.dumps(appereance)
+
+    # DB connect
+    es = Elasticsearch(host=HOST, port=PORT)
+    # new input
+    inputLink = {'id': socket.gethostname()+'-'+str(self.entityID),'host': socket.gethostname(), 'entity' : entity, 'url': url, 'doc': appereance}
+    # insert
+    es.index(index=IDXPROJ, doc_type=DOCTYPE, id=socket.gethostname()+'-'+str(self.entityID), body=inputLink)
+    self.entityID += 1
+
 
 ###############################################################
 # Main
@@ -171,3 +199,6 @@ if __name__ == "__main__":
   createDB()
   print "Tradá!"
   sys.exit(0)
+
+#curl -XGET 'http://localhost:9200/xstejs24_extractor/wikilinks/_count?pretty=true'
+#curl -XGET 'http://localhost:9200/xstejs24_extractor/wikilinks/[ID]?pretty=true'
