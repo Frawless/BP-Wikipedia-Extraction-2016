@@ -9,7 +9,7 @@ import re
 
 # main
 if __name__ == "__main__":
-  fileName = "/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/entity-non-page.none"
+  fileName = "/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/ExtractedEntity/entity-non-page.check"
   nounArray = {}
 
   file = open(fileName,'r')

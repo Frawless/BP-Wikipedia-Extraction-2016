@@ -75,6 +75,7 @@ class PersonClass:
   ###############################################################
   # Method for extract persons from current page
   # TODO - lehce rozdělit, zpřeheldnit, vylepšit tuto metodu
+  # TODO - KDYŽ ZJISTÍM O ČEM JE STRÁNKA TAK TO PŘIDAT K ENTITĚ AP AK SE ANT O PTÁT!
   ###############################################################
   def getPersons(self,page):
     names = []
@@ -86,6 +87,9 @@ class PersonClass:
     set = False
     nextName = True
     writeFirstSentence = False
+
+    #final output
+    finalOutput = ""
 
     for sentence in page.split("\n"):
       # parsing sentence with PAGE tag (PAGE FILTER)
@@ -158,17 +162,24 @@ class PersonClass:
                     #if "." not in part:
                     realName += part + " "
 
-                if realName is not "" and self.compareNames(realName,names):
+                if realName is not "" and self.compareNames(realName,names) and self.excludeEntityKind(realName):
                   #output += realName[:-1] + "\t" + pageURL + "\t" + re.sub(r'\|[^\]]+\]\]', '',sentence).replace('[[', '') + "\n"
                   # test pro věty s anotacemi
-                  output += realName[:-1] + "\t" + pageURL + "\t" + sentence + "\n"
+                  output += realName[:-1] + "\t" + pageURL + "\t" + sentence + "\t"+noun+"\n"
                   realName = ""
                   parsedName = ""
                   set = False
                 else:
                   realName = ""
+
+    # odstranění entity, které jsou referencovány na konci
+    for line in output.split('\n'):
+      entity = re.search('[^\t]+\thttp[^\n]+\n',line)
+      if entity not in names:
+        finalOutput += line+'\n'
+
     # return output -> maybe output[:-1] but in this case some entities are grouped together
-    return self.deleteDuplicity(output)
+    return self.deleteDuplicity(finalOutput)
 
   ###############################################################
   # Method for compare entity name with entities with URL from current page
@@ -189,4 +200,13 @@ class PersonClass:
         return False
       else:
         heurestic = 0
+    return True
+
+  ###############################################################
+  # Method for exclude possesive entity
+  ###############################################################
+  def excludeEntityKind(self,realName):
+    for item in realName.split(' '):
+      if re.search('nal|ral|tal|cal|ish|can|ian|lic|fic|tic|pic|mic|gic|ing',item[-3:]):
+        return False
     return True

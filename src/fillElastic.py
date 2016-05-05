@@ -56,10 +56,10 @@ class InsertClass:
     # DB connect
     es = Elasticsearch(host=HOST, port=PORT)
     # new input
-    inputLink = {'id': socket.gethostname()+'-'+str(self.entityID),'host': socket.gethostname(), 'entity' : entity, 'url': url, 'doc': appereance}
+    inputLink = {'id': socket.gethostname()+'-'+str(self.filteredEntity),'host': socket.gethostname(), 'entity' : entity, 'url': url, 'doc': appereance}
     # insert
-    es.index(index=IDXPROJ, doc_type=DOCTYPE, id=socket.gethostname()+'-'+str(self.entityID), body=inputLink)
-    self.entityID += 1'''
+    es.index(index=IDXPROJ, doc_type=DOCTYPE, id=socket.gethostname()+'-'+str(self.filteredEntity), body=inputLink)
+    self.filteredEntity += 1'''
 
 # main
 if __name__ == "__main__":

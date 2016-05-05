@@ -143,7 +143,7 @@ def createDB():
             "query" :{
               "bool": {
                 "must": [
-                  { "match": { "url":   "https://en.wikipedia.org/wiki/Manchester_Eagles"}},
+                  { "match": { "url":   "https://en.wikipedia.org/wiki/Spanish Empire"}},
                 ],
               }
             },

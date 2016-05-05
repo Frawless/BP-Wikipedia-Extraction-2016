@@ -15,7 +15,11 @@ import socket
 # import of created modules
 import find
 import persons
-import run
+
+###############################################################
+# Constants
+###############################################################
+PathPrefix = '/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'
 
 ###############################################################
 # Extractor class
@@ -26,7 +30,7 @@ class Extract:
   ###############################################################
   def __init__(self):
     self.wikiLinks = open(PathPrefix+'Wikilinks/' + socket.gethostname() + '.links', 'w+')
-    self.outputFile = open(PathPrefix+'ExtractedEntity/' + socket.gethostname() + '-non-page.tmp-entity', 'w+')
+    self.outputFile = open(PathPrefix+'ExtractedEntity/' + socket.gethostname() + '-non-page.entity', 'w+')
     self.listOfNouns = self.createListOfNouns()
 
   ###############################################################
