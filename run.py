@@ -71,13 +71,18 @@ def concatUrlFiles():
 def concatFiles():
   lineCounter = 0
 
-  with open(PathPrefix+'ExtractedEntity/entity-non-page.check', 'w+') as outfile:
+  for filename in glob.glob(os.path.join(PathPrefix+'ExtractedEntity', '*.entity')):
+    with open(filename) as infile:
+      for line in infile:
+        lineCounter += 1
+
+  '''with open(PathPrefix+'ExtractedEntity/entity-non-page.check', 'w+') as outfile:
    for filename in glob.glob(os.path.join(PathPrefix+'ExtractedEntity', '*.entity')):
      with open(filename) as infile:
        for line in infile:
          lineCounter += 1
          outfile.write(line)
-  outfile.close()
+  outfile.close()'''
   for file in glob.glob(PathPrefix+'ExtractedEntity/*.entity'):
     os.remove(file)
 
@@ -194,14 +199,14 @@ if __name__ == "__main__":
       print bcolors.OKGREEN + "Spouštím tvorbu URL souboru..." + bcolors.ENDC
       concatUrlFiles()
 
-    if not os.path.exists(PathPrefix+'ExtractedEntity/entity-non-page.check') or results.force:
+    '''if not os.path.exists(PathPrefix+'ExtractedEntity/entity-non-page.check') or results.force:
       print bcolors.OKGREEN + "Spouštím tvorbu souboru s entitami..." + bcolors.ENDC
-      concatFiles()
+      concatFiles()'''
 
-    if not os.path.exists(PathPrefix+'CheckedLinks/entity-non-page.checked') or results.force:
+    '''if not os.path.exists(PathPrefix+'CheckedLinks/entity-non-page.checked') or results.force:
       print bcolors.WARNING + "Spouštím kontrolu odkazů..."+bcolors.ENDC
       checkElastic.checkURL()
-      print bcolors.OKGREEN + "Kontrola dokončena."+bcolors.ENDC
+      print bcolors.OKGREEN + "Kontrola dokončena."+bcolors.ENDC'''
 
     # TODO - backup - původní verze
     '''if not checkCheckedData(results.servers) or results.force:

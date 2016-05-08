@@ -131,6 +131,10 @@ class PersonClass:
                   parsedName = ""
                   nextName = False
                   continue
+                if not '.' in item and len(item) < 2:
+                  parsedName = ""
+                  nextName = False
+                  continue
                 parsedName += item + " "
                 set = True
 
@@ -140,19 +144,23 @@ class PersonClass:
                   parsedName = ""
                   nextName = False
                   continue
-            else:
+            elif not nextName:
               nextName = True
-              if parsedName.count('NP') > 1 and re.search('\s', parsedName[:-1]) and not re.search('\d',parsedName) and len(re.findall('[A-Z][a-z]+', parsedName)) > 1:
-                if "URL=" in parsedName:
-                  nextName = True
-                  names.append(re.sub(r'\|[^\]]+\]\]', '', parsedName).replace('[[', ''))
+              if parsedName.count('NP') > 1 and re.search('\s', parsedName[:-1]) and not re.search('\d',parsedName):
+                if (len(re.findall('[A-Z][a-z]+', parsedName)) >= 1 and len(re.findall('\s',parsedName[:-1])) == 0) or (len(re.findall('[A-Z][a-z]+', parsedName)) > 1 and len(re.findall('\s',parsedName[:-1])) > 0):
+                  if "URL=" in parsedName:
+                    nextName = True
+                    names.append(re.sub(r'\|[^\]]+\]\]', '', parsedName).replace('[[', ''))
+                    parsedName = ""
+                    continue
+                  parsedName = re.sub(r'\|[^\]]+\]\]', '', parsedName).replace('[[', '')
+                else:
                   parsedName = ""
                   continue
-                parsedName = re.sub(r'\|[^\]]+\]\]', '', parsedName).replace('[[', '')
               else:
                 parsedName = ""
                 continue
-              if set:
+              if set and parsedName is not "":
                 for part in parsedName.split(" "):
                   if part.lower() in self.listOfNouns:
                     parsedName = ""
@@ -160,6 +168,9 @@ class PersonClass:
                     break
                   if part in parsedName and part not in realName:
                     #if "." not in part:
+                    if re.search('minister|president|colonel|lieutenant|major|officer|corporal|sergeant|master|commander|admiral|apprentice|chiev|manager',part,re.IGNORECASE):
+                      realName = ""
+                      continue
                     realName += part + " "
 
                 if realName is not "" and self.compareNames(realName,names) and self.excludeEntityKind(realName):

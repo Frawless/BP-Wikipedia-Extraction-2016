@@ -172,6 +172,8 @@ def checkURL():
     with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/ExtractedEntity/entity-non-page.check', 'r') as entitySourceFile:
       for line in entitySourceFile:
         entity = re.search('([^\t]+)\t(http[^\t]+)\t([^\t]+)\t([^\n]+)',line)
+        if not entity:
+          continue
         entityName = entity.group(1)
         pageURL = entity.group(2)
         entitySentence = entity.group(3)
