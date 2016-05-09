@@ -71,20 +71,20 @@ def concatUrlFiles():
 def concatFiles():
   lineCounter = 0
 
-  for filename in glob.glob(os.path.join(PathPrefix+'ExtractedEntity', '*.entity')):
+  '''for filename in glob.glob(os.path.join(PathPrefix+'ExtractedEntity', '*.entity')):
     with open(filename) as infile:
       for line in infile:
-        lineCounter += 1
+        lineCounter += 1'''
 
-  '''with open(PathPrefix+'ExtractedEntity/entity-non-page.check', 'w+') as outfile:
+  with open(PathPrefix+'ExtractedEntity/entity-non-page.checkv2', 'w+') as outfile:
    for filename in glob.glob(os.path.join(PathPrefix+'ExtractedEntity', '*.entity')):
      with open(filename) as infile:
        for line in infile:
          lineCounter += 1
          outfile.write(line)
-  outfile.close()'''
-  for file in glob.glob(PathPrefix+'ExtractedEntity/*.entity'):
-    os.remove(file)
+  outfile.close()
+  '''for file in glob.glob(PathPrefix+'ExtractedEntity/*.entity'):
+    os.remove(file)'''
 
   # entities without page (not-checked redirect yet)
   '''with open(PathPrefix+'entity-non-page.none', 'w+') as outfile:
@@ -189,19 +189,21 @@ if __name__ == "__main__":
   # connect to servers
   try:
     createFolders()  # create folders
+    if os.path.exists(PathPrefix+'statistic.stats'):
+      os.remove(PathPrefix+'statistic.stats')  # remove old statistic file
 
     if not os.path.exists(PathPrefix+'ExtractedEntity/entity-non-page.check') or results.force:
       print bcolors.WARNING + "Spouštím extrakci..."+bcolors.ENDC
       subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/extract.py ",shell=True)
       print bcolors.OKGREEN + "Dokončena extrakce!"+bcolors.ENDC
 
-    if not os.path.exists(PathPrefix+'Wikilinks/all-wiki-links.aux') or results.force:
+    '''if not os.path.exists(PathPrefix+'Wikilinks/all-wiki-links.aux') or results.force:
       print bcolors.OKGREEN + "Spouštím tvorbu URL souboru..." + bcolors.ENDC
-      concatUrlFiles()
+      concatUrlFiles()'''
 
-    '''if not os.path.exists(PathPrefix+'ExtractedEntity/entity-non-page.check') or results.force:
+    if not os.path.exists(PathPrefix+'ExtractedEntity/entity-non-page.check') or results.force:
       print bcolors.OKGREEN + "Spouštím tvorbu souboru s entitami..." + bcolors.ENDC
-      concatFiles()'''
+      concatFiles()
 
     '''if not os.path.exists(PathPrefix+'CheckedLinks/entity-non-page.checked') or results.force:
       print bcolors.WARNING + "Spouštím kontrolu odkazů..."+bcolors.ENDC

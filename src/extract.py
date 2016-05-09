@@ -11,6 +11,7 @@ import re
 import glob
 
 import socket
+import time
 
 # import of created modules
 import find
@@ -32,6 +33,12 @@ class Extract:
     self.wikiLinks = open(PathPrefix+'Wikilinks/' + socket.gethostname() + '.links', 'w+')
     self.outputFile = open(PathPrefix+'ExtractedEntity/' + socket.gethostname() + '-non-page.entity', 'w+')
     self.listOfNouns = self.createListOfNouns()
+    # Extraction statistics
+    self.startTime = time.time()
+    self.executionTime = 0
+    self.host = socket.gethostname()
+    self.articlesCount = 0
+    self.extractedEntityCount = 0
 
   ###############################################################
   # Method for clear page
@@ -63,21 +70,58 @@ class Extract:
 
       if not pageTag:
         tmp = re.search(r'^\d+\s+([^\s]+\s+[^\s]+\s+[^\s]+)',line)  # token + tag + lemma - can be modifed for another options
-        tmp_nertag = re.search(r'\d+\s+([^\s]+\s+){14}', line)  # LF nertag
-        tmp_url = re.search(r'\d+\s+([^\s]+\s+){9}', line)
-        if tmp_nertag and tmp and tmp_url:
-          if "0" not in tmp_nertag.group(1) and "0" not in tmp_url.group(1):
-            parsedPage += "[[" + re.sub('\s+', '|', tmp.group(1)) + "|entity=" + tmp_nertag.group(1)[:-1] + "|URL=" + tmp_url.group(1)[:-1] + "]] "
-          elif "0" in tmp_nertag.group(1) and "0" not in tmp_url.group(1):
-            parsedPage += "[[" + re.sub('\s+', '|', tmp.group(1)) + "|URL=" + tmp_url.group(1)[:-1] + "]] "
-          elif "0" not in tmp_nertag.group(1) and "0" in tmp_url.group(1):
-            parsedPage += "[[" + re.sub('\s+', '|', tmp.group(1)) + "|entity=" + tmp_nertag.group(1)[:-1] + "]] "
+        tmpNertag = re.search(r'\d+\s+([^\s]+\s+){14}', line)  # LF nertag
+        tmpURL = re.search(r'\d+\s+([^\s]+\s+){9}', line)
+        if tmpNertag and tmp and tmpURL:
+          if "0" not in tmpNertag.group(1) and "0" not in tmpURL.group(1):
+            parsedPage += "[[" + re.sub('\s+', '|', tmp.group(1)) + "|entity=" + tmpNertag.group(1)[:-1] + "|URL=" + tmpURL.group(1)[:-1] + "]] "
+          elif "0" in tmpNertag.group(1) and "0" not in tmpURL.group(1):
+            parsedPage += "[[" + re.sub('\s+', '|', tmp.group(1)) + "|URL=" + tmpURL.group(1)[:-1] + "]] "
+          elif "0" not in tmpNertag.group(1) and "0" in tmpURL.group(1):
+            parsedPage += "[[" + re.sub('\s+', '|', tmp.group(1)) + "|entity=" + tmpNertag.group(1)[:-1] + "]] "
           else:
             parsedPage += "[[" + re.sub('\s+', '|', tmp.group(1)) + "]] "
     return parsedPage
 
   ###############################################################
-  # Method for QA
+  # Method for extract single entity
+  ###############################################################
+  def extractNames(self, file):
+    data = ""
+    person = persons.PersonClass(self.wikiLinks, self.listOfNouns)
+    page = ""
+    for line in file:
+      if "%%#PAGE" in line:
+        # add page link to file
+        if len(page) > 0:
+          ###############################################################
+          page = self.clearPage(page) + "\n"
+          data += person.getPersons(page, self)
+          ###############################################################
+          page = ""
+        # extract text
+        page += line
+      elif "%%#DOC" not in line and "%%#PAR" not in line:
+        page += line
+    ###############################################################
+    page += self.clearPage(page) + "\n"
+    data += person.getPersons(page,self)
+    ###############################################################
+    page = ""
+    self.outputFile.write(data)
+
+  ###############################################################
+  # Method for collect most using nouns
+  ###############################################################
+  def createListOfNouns(self):
+    listOfNouns = []
+    file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/list_of_nouns', 'r')
+    for line in file:
+      listOfNouns.append(line[:-1])
+    return listOfNouns
+
+  ###############################################################
+  # Method for QA (only for future work)
   ###############################################################
   def getInformationFromPage(self, file, task_list):
     for line in file:
@@ -95,15 +139,14 @@ class Extract:
         for task in task_list:
           tmp = task
           task = task.split('|')
-          if "->" not in tmp:  # na serveru knot11 to z nejazných důvodů spadne na správné konstrukci tasku
+          if "->" not in tmp:
             if 'PAGE ' + task[0].replace('entity=', '') + '\thttp' in line and 'verb=' in task[1]:  # pages "entity"
-              # 0./-if task[0].replace('entity=','')+'\thttp' in line:
               array.append(tmp)
             elif task[0].replace('entity=', '') in line and 'verb=' not in task[1]:  # pages ..."entity"
               array.append(tmp)
             elif task[0].replace('entity=', '') in line and 'task=' in task[2]:  # pages ..."entity1" (influence)
               array.append(tmp)
-            elif task[1].replace('entity=', '') in line and 'task=' in task[2]:  # pages ..."entity2" (influence) TODO občas out of index
+            elif task[1].replace('entity=', '') in line and 'task=' in task[2]:  # pages ..."entity2" (influence)
               array.append(tmp)
         page = line
         pageTitle = line
@@ -112,44 +155,17 @@ class Extract:
         if "%%#DOC" not in line and "%%#PAR" not in line:
           page += line
 
-    outputTags = self.clearPage(page)
-
   ###############################################################
-  # Method for extract single entity
+  # Method for print server extract stats
   ###############################################################
-  def extractNames(self, file):
-    data = ""
-    person = persons.PersonClass(self.wikiLinks, self.listOfNouns)
-    page = ""
-    for line in file:
-      if "%%#PAGE" in line:
-        # add page link to file
-        if len(page) > 0:
-          ###############################################################
-          page = self.clearPage(page) + "\n"
-          data += person.getPersons(page)
-          ###############################################################
-          page = ""
-        # extract text
-        page += line
-      elif "%%#DOC" not in line and "%%#PAR" not in line:
-        page += line
-    ###############################################################
-    page += self.clearPage(page) + "\n"
-    data += person.getPersons(page)
-    ###############################################################
-    page = ""
-    self.outputFile.write(data)
-
-  ###############################################################
-  # Method for collect most using nouns
-  ###############################################################
-  def createListOfNouns(self):
-    listOfNouns = []
-    file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/list_of_nouns', 'r')
-    for line in file:
-      listOfNouns.append(line[:-1])
-    return listOfNouns
+  def showStats(self):
+    with open(PathPrefix+'statistic.stats', 'a+') as statsFile:
+      statsFile.write('###############################################################')
+      statsFile.write('# Server: '+self.host)
+      statsFile.write('# Execution time: '+str(self.executionTime))
+      statsFile.write('# Parsed Articles: '+str(self.articlesCount))
+      statsFile.write('# Extracted Entity: '+str(self.extractedEntityCount))
+      statsFile.write('###############################################################')
 
 ###############################################################
 # Main
@@ -163,20 +179,14 @@ if __name__ == "__main__":
   id = 0
   extractor = Extract()
 
-  #input_list = find.parseInput(input)  # create input_list -> QA
-  #task_list = find.parseList(input_list)  # create task list -> QA
-
   for filename in glob.glob(os.path.join('/mnt/data/indexes/wikipedia/enwiki-20150901/collPart*', '*.mg4j')):
-  #filename = "/mnt/data/indexes/wikipedia/enwiki-20150901/collPart001/athena1_wiki_00.vert.parsed.tagged.mg4j"
-  #filename = "/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/Andre_Emmerich-knot30-parsed-page.page"
-  #filename = "/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/Peter_Fuller-knot17-parsed-page.page"
-  #if True:
     file = open(filename, 'r')
     # getInformationFromPage(file,task_list)
     extractor.extractNames(file)
 
-  #task_list = find.setFoundFalse(task_list)
   extractor.wikiLinks.close()
   extractor.outputFile.close()
+  extractor.executionTime = (time.time() - extractor.startTime) * 60  # Exec time in minutes
+  extractor.showStats()  # Show Stats
 
   sys.exit(0)

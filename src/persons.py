@@ -74,10 +74,8 @@ class PersonClass:
 
   ###############################################################
   # Method for extract persons from current page
-  # TODO - lehce rozdělit, zpřeheldnit, vylepšit tuto metodu
-  # TODO - KDYŽ ZJISTÍM O ČEM JE STRÁNKA TAK TO PŘIDAT K ENTITĚ AP AK SE ANT O PTÁT!
   ###############################################################
-  def getPersons(self,page):
+  def getPersons(self,page, extractorClass):
     names = []
     link = ""
     output = ""
@@ -113,6 +111,7 @@ class PersonClass:
         if writeFirstSentence:
           verb, noun = self.getEntityInfo(sentence)
           self.wikiLinks.write(link+'\t'+verb+' '+noun+'\n')
+          extractorClass.articlesCount += 1
           writeFirstSentence = False
         # parse only sentences with verb (VERB FILTER)
         if not re.search('\[([^\|]+\|V[^\|]+\|[^\]]+)\]',sentence):
@@ -135,6 +134,7 @@ class PersonClass:
                   parsedName = ""
                   nextName = False
                   continue
+
                 parsedName += item + " "
                 set = True
 
@@ -144,7 +144,7 @@ class PersonClass:
                   parsedName = ""
                   nextName = False
                   continue
-            elif not nextName:
+            else:
               nextName = True
               if parsedName.count('NP') > 1 and re.search('\s', parsedName[:-1]) and not re.search('\d',parsedName):
                 if (len(re.findall('[A-Z][a-z]+', parsedName)) >= 1 and len(re.findall('\s',parsedName[:-1])) == 0) or (len(re.findall('[A-Z][a-z]+', parsedName)) > 1 and len(re.findall('\s',parsedName[:-1])) > 0):
@@ -168,8 +168,10 @@ class PersonClass:
                     break
                   if part in parsedName and part not in realName:
                     #if "." not in part:
-                    if re.search('minister|president|colonel|lieutenant|major|officer|corporal|sergeant|master|commander|admiral|apprentice|chiev|manager',part,re.IGNORECASE):
+                    if re.search('minister|president|colonel|lieutenant|major|officer|corporal|sergeant|master|commander|admiral|apprentice|chiev|manager|governor',part,re.IGNORECASE):
                       realName = ""
+                      continue
+                    if re.search('\s+.',part):
                       continue
                     realName += part + " "
 
@@ -188,6 +190,7 @@ class PersonClass:
       entity = re.search('[^\t]+\thttp[^\n]+\n',line)
       if entity not in names:
         finalOutput += line+'\n'
+        extractorClass.extractedEntityCount += 1
 
     # return output -> maybe output[:-1] but in this case some entities are grouped together
     return self.deleteDuplicity(finalOutput)

@@ -161,9 +161,10 @@ def checkURLwithRedirects(es,threadName,insertLink):
           sys.exit(0)
 
 ###############################################################
-# Method for check entity url with extracetd redirected URL form xml dump
+# Method for check entity url with url in db
 ###############################################################
 def checkURL():
+  shorterName = ''
   # new class + db conects
   insertLink = InsertClass()
   es = Elasticsearch(host='athena1.fit.vutbr.cz', port=9200)
@@ -179,29 +180,23 @@ def checkURL():
         entitySentence = entity.group(3)
         interest = entity.group(4)
         url = 'https://en.wikipedia.org/wiki/'+entityName.replace(' ','_')
-        #filter for get document
-        qbody = {
-              "filter": {
-                "term":  { "url":url}},
-
-            }
-        #print qbody
-        document = es.search(index='xstejs24_extractor', doc_type='wikilinks', body=qbody)
-        #print document
+        # find in db
+        document = checkDocument(es,url)
         # checking
         if document['hits'].get('total') > 0:
-          for item in document['hits']['hits']:
-            verb = item.get('_source').get('verb').encode('utf-8')
-            noun = item.get('_source').get('noun').encode('utf-8')
-            redirect = item.get('_source').get('redirect')
-          if not compareEntities(verb,noun,entitySentence,interest) and not redirect:
-            # filre write
-            outputFile.write(line)
-            # insert to elastic db - don't use
-            #insertLink.insertEntity(entityName,pageURL,entitySentence,es)
-          else:
-            insertLink.filteredEntity += 1
-            #print entityName + ' -> '+verb+' '+noun
+          checkDocument(document, line, outputFile, insertLink,entitySentence, interest)
+        elif '.' in entityName:
+          for item in entityName.split(' '):
+            if '.' not in item:
+              shorterName += item+' '
+          url ='https://en.wikipedia.org/wiki/'+shorterName[:-1].replace(' ','_')
+          #######################################################################
+          # find in db
+          document = checkDocument(es,url)
+          # checking
+          if document['hits'].get('total') > 0:
+            checkDocument(document, line, outputFile, insertLink,entitySentence, interest)
+          #######################################################################
 
         else:
           outputFile.write(line)
@@ -219,6 +214,31 @@ def checkURL():
           print 'Prozatím vloženo: '+str(insertLink.checkedEntity-insertLink.filteredEntity)
           sys.exit(0)'''
 
+###############################################################
+# Method for check founded document from db and write output
+###############################################################
+def checkDocument(document, line, outputFile, insertLink,entitySentence, interest):
+  for item in document['hits']['hits']:
+    verb = item.get('_source').get('verb').encode('utf-8')
+    noun = item.get('_source').get('noun').encode('utf-8')
+    redirect = item.get('_source').get('redirect')
+  if not compareEntities(verb,noun,entitySentence,interest) and not redirect:
+    # file write
+    outputFile.write(line)
+  else:
+    insertLink.filteredEntity += 1
+
+###############################################################
+# Method for create filter
+###############################################################
+def checkDocument(es, url):
+  #filter for get document
+  qbody = {
+        "filter": {
+          "term":  { "url":url}},
+
+      }
+  return es.search(index='xstejs24_extractor', doc_type='wikilinks', body=qbody)
 
 # main
 if __name__ == "__main__":

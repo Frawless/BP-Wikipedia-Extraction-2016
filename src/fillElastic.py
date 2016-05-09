@@ -18,6 +18,9 @@ class InsertClass:
   # Class init
   ###############################################################
   def __init__(self):
+      self.STAT = 'statistic'
+      self.DOCTYPE = 'wikilinks'
+      self.IDXPROJ = 'xstejs24_extractor'
       self.linkID = 0
       self.entityID = 0
   ###############################################################
@@ -25,9 +28,9 @@ class InsertClass:
   ###############################################################
   def insertWikilinks(self,link,es):
     # new input
-    inputLink = {'id': socket.gethostname()+'-'+str(self.linkID),'url': link[0], 'redirect' : False, 'url-redirected': 'none', 'verb': link[1], 'noun': link[2] }
+    inputLink = {'id': str(self.linkID),'url': link[0], 'redirect' : False, 'url-redirected': 'none', 'verb': link[1], 'noun': link[2] }
     # insert
-    es.index(index=IDXPROJ, doc_type=DOCTYPE, id=socket.gethostname()+'-'+str(self.linkID), body=inputLink)
+    es.index(index=self.IDXPROJ, doc_type=self.DOCTYPE, id=str(self.linkID), body=inputLink)
     self.linkID += 1
 
   ###############################################################
@@ -35,9 +38,19 @@ class InsertClass:
   ###############################################################
   def insertRedirects(self,link,es):
     # new input
-    inputLink = {'id': socket.gethostname()+'-'+str(self.linkID),'url': link[0], 'redirect' : True, 'url-redirected': link[1], 'verb': 'none', 'noun': 'none' }
+    inputLink = {'id': str(self.linkID),'url': link[0], 'redirect' : True, 'url-redirected': link[1], 'verb': 'none', 'noun': 'none' }
     # insert
-    es.index(index=IDXPROJ, doc_type=DOCTYPE, id=socket.gethostname()+'-'+str(self.linkID), body=inputLink)
+    es.index(index=self.IDXPROJ, doc_type=self.DOCTYPE, id=str(self.linkID), body=inputLink)
+    self.linkID += 1
+
+  ###############################################################
+  # Method for Elastic insert statistics
+  ###############################################################
+  def insertStats(self,data,es):
+    # new input
+    inputLink = {'id': data[0],'host': data[1], 'time' : data[2], 'articles': data[3], 'entity': data[4] }
+    # insert
+    es.index(index=self.IDXPROJ, doc_type=self.STAT, id=data[0], body=inputLink)
     self.linkID += 1
 
   ###############################################################
@@ -97,6 +110,8 @@ if __name__ == "__main__":
 
       insertLink.insertRedirects(link,es)
       link = []
+
+  # insert statistic
 
   print "Hotovo!"
 

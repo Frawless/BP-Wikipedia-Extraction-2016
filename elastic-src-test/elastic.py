@@ -40,64 +40,21 @@ def createDB():
               'noun':           {'type':'string','index': 'not_analyzed'},
           }
       },
+      'statistic': {
+          'properties': {
+              'id':             {'type':'string','index': 'not_analyzed'},
+              'host':           {'type':'string','index': 'not_analyzed'},
+              'time':           {'type':'int','index': 'not_analyzed'},
+              'articles':       {'type':'int','index': 'not_analyzed'},
+              'entity':         {'type':'int','index': 'not_analyzed'},
+          }
+      },
       'extracted': {
           'properties': {
-              'id':               {'type':'string'},
-              'host':             {'type':'string'},
-              'entity':           {'type':'string'},
-              'url':              {'type':'string' },
-              'sentences': {
-                'type': 'nested',
-                'include_in_parent': True,
-                'properties': {
-                  'appereance':		   { 'type': 'string' }
-                }
-              },
-          }
-      },
-      'withoutURL': {
-          'properties': {
-              'id':               {'type':'long'},
-              'host':           {'type':'string'},
-              'entity':       {'type':'string'},
-              'url':    {'type':'string' },
-              'sentences': {
-                'type': 'nested',
-                'include_in_parent': True,
-                'properties': {
-                  'appereance':		   { 'type': 'string' }
-                }
-              },
-          }
-      },
-      'checkedURL': {
-          'properties': {
-              'id':               {'type':'long'},
-              'host':           {'type':'string'},
-              'entity':       {'type':'string'},
-              'url':    {'type':'string' },
-              'sentences': {
-                'type': 'nested',
-                'include_in_parent': True,
-                'properties': {
-                  'appereance':		   { 'type': 'string' }
-                }
-              },
-          }
-      },
-      'alreadyURL': {
-          'properties': {
-              'id':               {'type':'long'},
-              'host':           {'type':'string'},
-              'entity':       {'type':'string'},
-              'url':    {'type':'string' },
-              'sentences': {
-                'type': 'nested',
-                'include_in_parent': True,
-                'properties': {
-                  'appereance':		   { 'type': 'string' }
-                }
-              },
+              'id':               {'type':'string','index': 'not_analyzed'},
+              'entity':           {'type':'string','index': 'not_analyzed'},
+              'page':             {'type':'string','index': 'not_analyzed'},
+              'sentence':         {'type':'string','index': 'not_analyzed'},
           }
       }
   }
