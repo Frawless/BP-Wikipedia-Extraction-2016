@@ -159,13 +159,13 @@ class Extract:
   # Method for print server extract stats
   ###############################################################
   def showStats(self):
-    with open(PathPrefix+'statistic.stats', 'a+') as statsFile:
-      statsFile.write('###############################################################')
-      statsFile.write('# Server: '+self.host)
-      statsFile.write('# Execution time: '+str(self.executionTime))
-      statsFile.write('# Parsed Articles: '+str(self.articlesCount))
-      statsFile.write('# Extracted Entity: '+str(self.extractedEntityCount))
-      statsFile.write('###############################################################')
+    with open(PathPrefix+'/Statistic/statistic'+self.host+'.tmp-stats', 'w+') as statsFile:
+      statsFile.write('###############################################################\n')
+      statsFile.write('# Server:\t'+self.host+'\n')
+      statsFile.write('# Execution time:\t'+str(self.executionTime)+' min\n')
+      statsFile.write('# Parsed Articles:\t'+str(self.articlesCount)+'\n')
+      statsFile.write('# Extracted Entity:\t'+str(self.extractedEntityCount)+'\n')
+      statsFile.write('###############################################################\n\n')
 
 ###############################################################
 # Main
@@ -186,7 +186,8 @@ if __name__ == "__main__":
 
   extractor.wikiLinks.close()
   extractor.outputFile.close()
-  extractor.executionTime = (time.time() - extractor.startTime) * 60  # Exec time in minutes
+  extractor.executionTime = (time.time() - extractor.startTime) / 60  # Exec time in minutes
   extractor.showStats()  # Show Stats
+
 
   sys.exit(0)

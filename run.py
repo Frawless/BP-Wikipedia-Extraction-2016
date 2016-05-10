@@ -76,15 +76,24 @@ def concatFiles():
       for line in infile:
         lineCounter += 1'''
 
-  with open(PathPrefix+'ExtractedEntity/entity-non-page.checkv2', 'w+') as outfile:
+  with open(PathPrefix+'ExtractedEntity/entity-non-page.check', 'w+') as outfile:
    for filename in glob.glob(os.path.join(PathPrefix+'ExtractedEntity', '*.entity')):
      with open(filename) as infile:
        for line in infile:
          lineCounter += 1
          outfile.write(line)
   outfile.close()
-  '''for file in glob.glob(PathPrefix+'ExtractedEntity/*.entity'):
-    os.remove(file)'''
+  for file in glob.glob(PathPrefix+'ExtractedEntity/*.entity'):
+    os.remove(file)
+
+  with open(PathPrefix+'Statistic/statistic.stats', 'w+') as outfile:
+   for filename in glob.glob(os.path.join(PathPrefix+'Statistic', '*.tmp-stats')):
+     with open(filename) as infile:
+       for line in infile:
+         outfile.write(line)
+  outfile.close()
+  for file in glob.glob(PathPrefix+'Statistic/*.tmp-stats'):
+    os.remove(file)
 
   # entities without page (not-checked redirect yet)
   '''with open(PathPrefix+'entity-non-page.none', 'w+') as outfile:
@@ -126,6 +135,9 @@ def createFolders():
   if not os.path.exists(PathPrefix+'Deleted'):
     print ("Vytvářím složku: Deleted")
     os.makedirs(PathPrefix+'Deleted')
+  if not os.path.exists(PathPrefix+'Statistic'):
+    print ("Vytvářím složku: Statistic")
+    os.makedirs(PathPrefix+'Statistic')
 
 ###############################################################
 # Method for check exists files (already extracted entity with system)
@@ -189,8 +201,6 @@ if __name__ == "__main__":
   # connect to servers
   try:
     createFolders()  # create folders
-    if os.path.exists(PathPrefix+'statistic.stats'):
-      os.remove(PathPrefix+'statistic.stats')  # remove old statistic file
 
     if not os.path.exists(PathPrefix+'ExtractedEntity/entity-non-page.check') or results.force:
       print bcolors.WARNING + "Spouštím extrakci..."+bcolors.ENDC
@@ -205,10 +215,10 @@ if __name__ == "__main__":
       print bcolors.OKGREEN + "Spouštím tvorbu souboru s entitami..." + bcolors.ENDC
       concatFiles()
 
-    '''if not os.path.exists(PathPrefix+'CheckedLinks/entity-non-page.checked') or results.force:
+    if not os.path.exists(PathPrefix+'CheckedLinks/entity-non-page.checked') or results.force:
       print bcolors.WARNING + "Spouštím kontrolu odkazů..."+bcolors.ENDC
       checkElastic.checkURL()
-      print bcolors.OKGREEN + "Kontrola dokončena."+bcolors.ENDC'''
+      print bcolors.OKGREEN + "Kontrola dokončena."+bcolors.ENDC
 
     # TODO - backup - původní verze
     '''if not checkCheckedData(results.servers) or results.force:

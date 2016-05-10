@@ -171,7 +171,7 @@ class PersonClass:
                     if re.search('minister|president|colonel|lieutenant|major|officer|corporal|sergeant|master|commander|admiral|apprentice|chiev|manager|governor',part,re.IGNORECASE):
                       realName = ""
                       continue
-                    if re.search('\s+.',part):
+                    if re.search('\s+.',part) or re.search('\'',part):
                       continue
                     realName += part + " "
 

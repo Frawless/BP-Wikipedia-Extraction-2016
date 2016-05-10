@@ -181,7 +181,7 @@ def checkURL():
         interest = entity.group(4)
         url = 'https://en.wikipedia.org/wiki/'+entityName.replace(' ','_')
         # find in db
-        document = checkDocument(es,url)
+        document = getDocument(es,url)
         # checking
         if document['hits'].get('total') > 0:
           checkDocument(document, line, outputFile, insertLink,entitySentence, interest)
@@ -192,7 +192,7 @@ def checkURL():
           url ='https://en.wikipedia.org/wiki/'+shorterName[:-1].replace(' ','_')
           #######################################################################
           # find in db
-          document = checkDocument(es,url)
+          document = getDocument(es,url, outputFile, insertLink,entitySentence, interest)
           # checking
           if document['hits'].get('total') > 0:
             checkDocument(document, line, outputFile, insertLink,entitySentence, interest)
@@ -231,7 +231,7 @@ def checkDocument(document, line, outputFile, insertLink,entitySentence, interes
 ###############################################################
 # Method for create filter
 ###############################################################
-def checkDocument(es, url):
+def getDocument(es, url):
   #filter for get document
   qbody = {
         "filter": {
