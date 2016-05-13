@@ -15,6 +15,7 @@ import os.path
 import re
 
 # mine imports
+from src import retreiveInfo
 from src import extractRedirects
 from src import fillElastic
 from src import checkElastic
@@ -73,11 +74,6 @@ def concatUrlFiles():
 def concatFiles():
   lineCounter = 0
 
-  '''for filename in glob.glob(os.path.join(PathPrefix+'ExtractedEntity', '*.entity')):
-    with open(filename) as infile:
-      for line in infile:
-        lineCounter += 1'''
-
   with open(PathPrefix+'ExtractedEntity/entity-non-page.check', 'w+') as outfile:
    for filename in glob.glob(os.path.join(PathPrefix+'ExtractedEntity', '*.entity')):
      with open(filename) as infile:
@@ -97,29 +93,58 @@ def concatFiles():
   for file in glob.glob(PathPrefix+'Statistic/*.tmp-stats'):
     os.remove(file)
 
-  # entities without page (not-checked redirect yet)
-  '''with open(PathPrefix+'entity-non-page.none', 'w+') as outfile:
-     for filename in glob.glob(os.path.join(PathPrefix+'CheckedLinks', '*.checked')):
-       with open(filename) as infile:
-         for line in infile:
-           lineCounter += 1
-           outfile.write(line)
-  outfile.close()
-  # delete entites -> they already have page (only or testing now)
-  with open(PathPrefix+'entity-non-page.del', 'w+') as outfile:
-     for filename in glob.glob(os.path.join(PathPrefix+'Deleted/', '*.deleted')):
-       with open(filename) as infile:
-         for line in infile:
-           outfile.write(line)
-  outfile.close()
-  print bcolors.WARNING + "Mažu pomocné soubory..." + bcolors.ENDC
-  # clearing *.tmp files
-  for file in glob.glob(PathPrefix+'CheckedLinks/*.checked'):
-    os.remove(file)
-  for file in glob.glob(PathPrefix+'Deleted/*.deleted'):
-    os.remove(file)'''
+
   print bcolors.OKGREEN + "Soubor vytvořen!" + bcolors.ENDC
   print bcolors.OKGREEN + "Počet nalezených entit bez článku: {}".format(lineCounter) + bcolors.ENDC
+
+###############################################################
+# Method for split big entity file to cluster
+###############################################################
+def splitCheckedEntity(servers):
+  entityCounter = 0
+  cnt = 0
+  fileNames = []
+  x = 0
+
+  with open (servers) as serversFile:
+    for server in serversFile:
+      serverName = re.search('([^\.]+)\.fit\.vutbr\.cz',server)
+      if serverName:
+        fileNames.append(serverName.group(1))
+
+  with open(PathPrefix+'CheckedLinks/entity-non-page.checkedv2','r') as entityFile:
+    for line in entityFile:
+      entityCounter += 1
+
+    fileSize = entityCounter / 31 + 2000
+
+  with open(PathPrefix+'CheckedLinks/entity-non-page.checkedv2','r') as entityFile:
+    clusterFile = open(PathPrefix+'FinalInformation/'+fileNames[x]+'-extracted.info','w+')
+    for line in entityFile:
+      #print line
+      clusterFile.write(line)
+      cnt += 1
+      if cnt == fileSize:
+        cnt = 0
+        clusterFile.close()
+        x += 1
+        clusterFile = open(PathPrefix+'FinalInformation/'+fileNames[x]+'-extracted.info','w+')
+    clusterFile.close()
+
+###############################################################
+# Method for join final files
+###############################################################
+def reJoinInfoFiles():
+  # joining final files
+  with open(PathPrefix+'FinalInformation/entity-non-page.info', 'w+') as outputFile:
+    for filename in glob.glob(os.path.join(PathPrefix+'FinalInformation', '*.info-extracted')):
+      with open(filename) as infile:
+        for line in infile:
+          outputFile.write(line)
+  outputFile.close()
+  for file in glob.glob(PathPrefix+'FinalInformation/*.info'):
+    os.remove(file)
+
 
 ###############################################################
 # Method for check create subfolders
@@ -140,12 +165,14 @@ def createFolders():
   if not os.path.exists(PathPrefix+'Statistic'):
     print ("Vytvářím složku: Statistic")
     os.makedirs(PathPrefix+'Statistic')
+  if not os.path.exists(PathPrefix+'FinalInformation'):
+    print ("Vytvářím složku: FinalInformation")
+    os.makedirs(PathPrefix+'FinalInformation')
 
 ###############################################################
 # Method for check exists files (already extracted entity with system)
 ###############################################################
 def checkExtractedData(servers):
-  return True
   with open (servers) as serversFile:
     for server in serversFile:
       serverName = re.search('([^\.]+)\.fit\.vutbr\.cz',server).group(1)
@@ -155,7 +182,6 @@ def checkExtractedData(servers):
 
 ###############################################################
 # Method for check exists files (already checked with system)
-# TODO - delete
 ###############################################################
 def checkCheckedData(servers):
   with open (servers) as serversFile:
@@ -164,8 +190,6 @@ def checkCheckedData(servers):
       if not os.path.exists(PathPrefix+'CheckedLinks/'+serverName+'.checked'):
         return False
   return True
-
-
 
 ###############################################################
 # Method for start parallel shh and extraction on all machines
@@ -200,6 +224,7 @@ if __name__ == "__main__":
   parser.add_argument('-e', '--elastic', action="store_true", help='System will ubgrade elastic databse with extracted links')
   results = parser.parse_args()
 
+
   # connect to servers
   try:
     # TODO - nastavit správně pro celkový systém!
@@ -207,35 +232,45 @@ if __name__ == "__main__":
 
     # Entity extract
     '''if not os.path.exists(PathPrefix+'ExtractedEntity/entity-non-page.check') or results.force:
-      print bcolors.WARNING + "Spouštím extrakci..."+bcolors.ENDC
+      print bcolors.WARNING + "Spouštím extrakci entit..."+bcolors.ENDC
       subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/extract.py ",shell=True)
-      print bcolors.OKGREEN + "Dokončena extrakce!"+bcolors.ENDC'''
+      print bcolors.OKGREEN + "Dokončena extrakce entit!"+bcolors.ENDC'''
 
     # Wikilinks concatenate
-    if not os.path.exists(PathPrefix+'Wikilinks/all-wiki-links.aux') or results.force:
+    '''if not os.path.exists(PathPrefix+'Wikilinks/all-wiki-links.aux') or results.force:
       print bcolors.OKGREEN + "Spouštím tvorbu URL souboru..." + bcolors.ENDC
-      concatUrlFiles()
+      concatUrlFiles()'''
 
     # Redirects extract
     '''if not os.path.exists(PathPrefix+'Wikilinks/redirectedLinks.redirect') or results.force:
       print bcolors.OKGREEN + "Spouštím extrakci přesměrovaných odkazů..." + bcolors.ENDC
       extractRedirects.findRedirects()'''
 
-    # Update elastic
-    '''if results.elastic:
-      print bcolors.OKGREEN + "Spouštím update databáze..." + bcolors.ENDC
-      fillElastic.insertData()'''
-
     # Concat entity file
     '''if not os.path.exists(PathPrefix+'ExtractedEntity/entity-non-page.check') or results.force:
       print bcolors.OKGREEN + "Spouštím tvorbu souboru s entitami..." + bcolors.ENDC
       concatFiles()'''
+
+    # Update elastic
+    '''if results.elastic:
+      print bcolors.OKGREEN + "Spouštím update databáze..." + bcolors.ENDC
+      fillElastic.insertData()'''
 
     # Check entity url
     '''if not os.path.exists(PathPrefix+'CheckedLinks/entity-non-page.checked') or results.force:
       print bcolors.WARNING + "Spouštím kontrolu odkazů..."+bcolors.ENDC
       checkElastic.checkURL()
       print bcolors.OKGREEN + "Kontrola dokončena."+bcolors.ENDC'''
+
+    # Extract information
+    if not os.path.exists(PathPrefix+'FinalInformation/entity-non-page.info') or results.force:
+      print bcolors.WARNING + "Spouštím extrakci informací..."+bcolors.ENDC
+      #splitCheckedEntity(results.servers)
+      print bcolors.WARNING + "Rozděleny soubory, spuštím samotnou extrakci..."+bcolors.ENDC
+      subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/retreiveInfo.py ",shell=True)
+      print bcolors.WARNING + "Spojuji soubory..."+bcolors.ENDC
+      reJoinInfoFiles()
+      print bcolors.OKGREEN + "Extrakce informací dokončena!"+bcolors.ENDC
 
   except OSError as e:
     print bcolors.FAIL + "Execution failed:" + bcolors.ENDC + "", e

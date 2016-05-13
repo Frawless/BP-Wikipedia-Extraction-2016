@@ -74,10 +74,7 @@ class InsertClass:
       appereance += '{"sentence": "'+item.replace('"','')+'"}, '
 
     appereance = '{"sentences": '+appereance[:-2]+']}'
-    #print appereance
-    #appereance = json.loads(appereance)
     appereance = json.dumps(appereance)
-
 
     # new input
     inputLink = {'id': self.insertID,'host': socket.gethostname(), 'entity' : entity, 'url': url, 'doc': appereance}
@@ -96,7 +93,6 @@ class InsertClass:
 
 ###############################################################
 # Method for check if entity from URL is same as from text
-# TODO - chtělo by to trošku vylepšit, uvidíme dle výsledků
 ###############################################################
 def compareEntities(verb,noun,line, interest):
   if noun is 'unknow' or noun is 'none':
@@ -117,49 +113,6 @@ def compareEntities(verb,noun,line, interest):
       return False
   return True
 
-  #return True if heurestic > len(noun.split(' ')) * 3 else False
-
-###############################################################
-# Method for check entity url with extracetd redirected URL form xml dump
-###############################################################
-def checkURLwithRedirects(es,threadName,insertLink):
-  with open(threadName.replace('/ExtractedEntity/','/CheckedLinks/'), 'w+') as outputFile:
-    with open(threadName, 'r') as entitySourceFile:
-      for line in entitySourceFile:
-        entity = re.search('([^\t]+)\t(http[^\t]+)\t([^\t]+)\t([^\n]+)',line)
-        entityName = entity.group(1)
-        pageURL = entity.group(2)
-        entitySentence = entity.group(3)
-        interest = entity.group(4)
-        url = 'https://en.wikipedia.org/wiki/'+entityName.replace(' ','_')
-        #filter for get document
-        qbody = {
-              "filter": {
-                "term":  { "url":url}},
-
-            }
-        document = es.search(index='xstejs24_extractor', doc_type='wikilinks', body=qbody)
-        # checking
-        if document['hits'].get('total') > 0:
-          for item in document['hits']['hits']:
-            verb = item.get('_source').get('verb').encode('utf-8')
-            noun = item.get('_source').get('noun').encode('utf-8')
-          if verb == 'unknown' and noun == 'unknown':
-            # filre write
-            outputFile.write(line)
-          elif not compareEntities(verb,noun,entitySentence, interest):
-            # filre write
-            outputFile.write(line)
-            # insert to elastic db - don't use
-            #insertLink.insertEntity(entityName,pageURL,entitySentence,es)
-          else:
-            insertLink.filteredEntity += 1
-            #print entityName + ' -> '+verb+' '+noun
-
-        insertLink.checkedEntity += 1
-        if insertLink.checkedEntity > 10000:
-          sys.exit(0)
-
 ###############################################################
 # Method for check entity url with url in db
 ###############################################################
@@ -170,10 +123,10 @@ def checkURL():
   es = Elasticsearch(host='athena1.fit.vutbr.cz', port=9200)
   # opening files
   # TODO - nastavit správně pro celkový systém!
-  #with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/CheckedLinks/entity-non-page.checked', 'w+') as outputFile:
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/results/Origins_of_the_American_Civil_War_vystup_extrakce.checked', 'w+') as outputFile:
-    #with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/ExtractedEntity/entity-non-page.check', 'r') as entitySourceFile:
-    with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/results/Origins_of_the_American_Civil_War_vystup_extrakce.entity', 'r') as entitySourceFile:
+  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/CheckedLinks/entity-non-page.checked', 'w+') as outputFile:
+  #with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/results/Origins_of_the_American_Civil_War_vystup_extrakce.checked', 'w+') as outputFile:
+    with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/ExtractedEntity/entity-non-page.check', 'r') as entitySourceFile:
+    #with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/results/Origins_of_the_American_Civil_War_vystup_extrakce.entity', 'r') as entitySourceFile:
       for line in entitySourceFile:
         entity = re.search('([^\t]+)\t(http[^\t]+)\t([^\t]+)\t([^\n]+)',line)
         if not entity:
@@ -192,7 +145,6 @@ def checkURL():
           for item in entityName.split(' '):
             if '.' not in item:
               shorterName += item+' '
-          # TODO - otestovat druhou část podmínky
           if shorterName[:-1].replace(' ','_') in url or len(re.findall(' ',shorterName[:-1])) < 2:
             insertLink.checkedEntity += 1
             outputFile.write(line)
@@ -207,7 +159,6 @@ def checkURL():
           else:
             outputFile.write(line)
           #######################################################################
-
         else:
           outputFile.write(line)
 
@@ -218,7 +169,7 @@ def checkURL():
           print 'Prozatím vyfiltrováno: '+str(insertLink.filteredEntity)
           print 'Prozatím vloženo: '+str(insertLink.checkedEntity-insertLink.filteredEntity)
 
-        if insertLink.checkedEntity % 500000 == 0:
+        if insertLink.checkedEntity % 200000 == 0:
           print 'Prozatím zpracováno: '+str(insertLink.checkedEntity)
           print 'Prozatím vyfiltrováno: '+str(insertLink.filteredEntity)
           print 'Prozatím vloženo: '+str(insertLink.checkedEntity-insertLink.filteredEntity)
@@ -257,28 +208,8 @@ def getDocument(es, url):
 # main
 if __name__ == "__main__":
   print strftime("%Y-%m-%d %H:%M:%S", gmtime())
-  #checkMultiThreadURL(insertLink.getFiles(), insertLink)
   checkURL()
   print strftime("%Y-%m-%d %H:%M:%S", gmtime())
-
-  '''x = 0
-  es = Elasticsearch(host='athena1.fit.vutbr.cz', port=9200)
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/ExtractedEntity/entity-non-page.check', 'r') as entitySourceFile:
-  #with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/CheckedLinks/'+socket.gethostname()+'/'+socket.gethostname()+'-'+str(0)+'.tmp', 'r') as entitySourceFile:
-    #entity-non-page.check
-    for line in entitySourceFile:
-      item = re.search('([^\t]+)\thttp[^\t]+\t[^\n]+',line)
-      url = 'https://en.wikipedia.org/wiki/'+item.group(1).replace(' ','_')
-      qbody = {
-            "filter": {
-              "term":  { "url":url}},
-          }
-      jsonTest = es.search(index='xstejs24_extractor', doc_type='wikilinks', body=qbody)
-      if jsonTest['hits'].get('total') > 0:
-        insertLink.filteredEntity += 1
-      x += 1
-      insertLink.checkedEntity += 1'''
-
 
   sys.exit(0)
 
