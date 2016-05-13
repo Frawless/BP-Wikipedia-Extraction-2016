@@ -137,12 +137,12 @@ def splitCheckedEntity(servers):
 def reJoinInfoFiles():
   # joining final files
   with open(PathPrefix+'FinalInformation/entity-non-page.info', 'w+') as outputFile:
-    for filename in glob.glob(os.path.join(PathPrefix+'FinalInformation', '*.info-extracted')):
+    for filename in glob.glob(os.path.join(PathPrefix+'FinalInformation/', '*.info-extracted')):
       with open(filename) as infile:
         for line in infile:
           outputFile.write(line)
   outputFile.close()
-  for file in glob.glob(PathPrefix+'FinalInformation/*.info'):
+  for file in glob.glob(PathPrefix+'FinalInformation/*.info-extracted'):
     os.remove(file)
 
 
@@ -265,7 +265,7 @@ if __name__ == "__main__":
     # Extract information
     if not os.path.exists(PathPrefix+'FinalInformation/entity-non-page.info') or results.force:
       print bcolors.WARNING + "Spouštím extrakci informací..."+bcolors.ENDC
-      #splitCheckedEntity(results.servers)
+      splitCheckedEntity(results.servers)
       print bcolors.WARNING + "Rozděleny soubory, spuštím samotnou extrakci..."+bcolors.ENDC
       subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/retreiveInfo.py ",shell=True)
       print bcolors.WARNING + "Spojuji soubory..."+bcolors.ENDC
