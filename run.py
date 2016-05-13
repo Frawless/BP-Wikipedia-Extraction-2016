@@ -118,10 +118,10 @@ def splitCheckedEntity(servers):
 
     fileSize = entityCounter / 31 + 2000
 
+  # TODO - nastavit správný vstup
   with open(PathPrefix+'CheckedLinks/entity-non-page.checkedv2','r') as entityFile:
     clusterFile = open(PathPrefix+'FinalInformation/'+fileNames[x]+'-extracted.info','w+')
     for line in entityFile:
-      #print line
       clusterFile.write(line)
       cnt += 1
       if cnt == fileSize:
@@ -136,13 +136,15 @@ def splitCheckedEntity(servers):
 ###############################################################
 def reJoinInfoFiles():
   # joining final files
-  with open(PathPrefix+'FinalInformation/entity-non-page.info', 'w+') as outputFile:
+  with open(PathPrefix+'FinalInformation/entity-non-page.extracted', 'w+') as outputFile:
     for filename in glob.glob(os.path.join(PathPrefix+'FinalInformation/', '*.info-extracted')):
       with open(filename) as infile:
         for line in infile:
           outputFile.write(line)
   outputFile.close()
   for file in glob.glob(PathPrefix+'FinalInformation/*.info-extracted'):
+    os.remove(file)
+  for file in glob.glob(PathPrefix+'FinalInformation/*.info'):
     os.remove(file)
 
 

@@ -51,22 +51,22 @@ def getInfo(sentences,entity,url,interest):
               # Remove every spare text
               subject = tmpSubject
 
-              if re.search('^'+entity+'.*',subject):
+              if re.match(re.escape(entity),subject):
                 subject = subject.replace(entity+' ','')
               # Subject must have few words after entity replace
               if subject is not '':
                 # Present time
                 if re.search('former|actual|is|current',subject, re.IGNORECASE):
-                  info.append('Entity:'+entity.replace(' ','_')+' is '+subject+'of '+url)   # Create information
+                  info.append('Entity:'+entity.replace(' ','_')+' is '+subject+' of '+url)   # Create information
                 # Previous time
                 else:
-                  info.append('Entity:'+entity.replace(' ','_')+' was '+subject+'of '+url)  # Create information
+                  info.append('Entity:'+entity.replace(' ','_')+' was '+subject+' of '+url)  # Create information
           # False information
           #createInformation(subject, entity, url, info,entityHighLetters)
           # Check if system found all data for create structured info
           if subject is not '' and gotPredicate and entity in tmpSubject:
             subject = tmpSubject
-            if re.search('^'+entity+'.*',subject):
+            if re.match(re.escape(entity),subject):
               subject = ' '+subject.replace(entity,'')
             if re.search('[A-Z]*|[a-z]*',subject):
               subject = ''
@@ -123,32 +123,35 @@ def createInformation(subject, entity, url, info,entityHighLetters):
       # Remove every spare text
       #subject = re.sub('\[\['+entity.replace(' ','.*')+'.*','',subject[:-1])
       subject = tmpSubject
-      if re.search('^'+entity+'.*',subject):
+      if re.match(re.escape(entity),subject):
         subject = subject.replace(entity+' ','')
       # Subject must have few words after entity replace
       if subject is not '':
         # Present time
         if re.search('former|actual|is|current',subject, re.IGNORECASE):
-          info.append('Entity:'+entity.replace(' ','_')+' is '+subject+'of '+url)   # Create information
+          info.append('Entity:'+entity.replace(' ','_')+' is '+subject+' of '+url)   # Create information
         # Previous time
         else:
-          info.append('Entity:'+entity.replace(' ','_')+' was '+subject+'of '+url)  # Create information
+          info.append('Entity:'+entity.replace(' ','_')+' was '+subject+' of '+url)  # Create information
   #return info
 
 ###############################################################
 # Method for extract information about extracted entity
 ###############################################################
 def startInformationExtraction():
+  cnt = 0
   # Output file
-  #if os.path.exists(PathPrefix+'FinalInformation/'+socket.gethostname()+'-extracted.info'):
+  if os.path.exists(PathPrefix+'FinalInformation/'+socket.gethostname()+'-extracted.info'):
     with open(PathPrefix+'FinalInformation/'+socket.gethostname()+'-extracted.info-extracted','w+') as outputFile:
+      outputFile.write('Input: '+socket.gethostname()+'-extracted.info\n')
       # Input file
-      #with open(PathPrefix+'FinalInformation/'+socket.gethostname()+'-extracted.info','r') as inputFile:
-      with open(PathPrefix+'results/Alaska_Aces_(PBA)_overene_odkazy.checked','r') as inputFile:
+      with open(PathPrefix+'FinalInformation/'+socket.gethostname()+'-extracted.info','r') as inputFile:
+      #with open(PathPrefix+'results/Alaska_Aces_(PBA)_overene_odkazy.checked','r') as inputFile:
         for line in inputFile:
           # Get data from input file
           data = re.search('([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\n]+)\n', line)
           if data:
+            cnt += 1
             entity = data.group(1)
             url = data.group(2)
             interest = data.group(3)
@@ -162,7 +165,5 @@ def startInformationExtraction():
 # Main
 ###############################################################
 if __name__ == "__main__":
-  print 'ha'
   startInformationExtraction()
-  print 'ne'
   sys.exit(0)
