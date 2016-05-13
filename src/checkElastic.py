@@ -99,7 +99,7 @@ class InsertClass:
 # TODO - chtělo by to trošku vylepšit, uvidíme dle výsledků
 ###############################################################
 def compareEntities(verb,noun,line, interest):
-  if noun is 'unknow':
+  if noun is 'unknow' or noun is 'none':
     return True
   heurestic = 0
   for item in verb.split(' '):
@@ -108,11 +108,11 @@ def compareEntities(verb,noun,line, interest):
   for item in noun.split(' '):
     if item in line:
       heurestic += 3
-
   # check if pages are in same interesting
   if not heurestic > len(noun.split(' ')) * 3:
-    if interest in noun:
-      return True
+    for item in interest.split(' '):
+      if item in noun:
+        return True
     else:
       return False
   return True
@@ -169,16 +169,19 @@ def checkURL():
   insertLink = InsertClass()
   es = Elasticsearch(host='athena1.fit.vutbr.cz', port=9200)
   # opening files
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/CheckedLinks/entity-non-page.checked', 'w+') as outputFile:
-    with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/ExtractedEntity/entity-non-page.check', 'r') as entitySourceFile:
+  # TODO - nastavit správně pro celkový systém!
+  #with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/CheckedLinks/entity-non-page.checked', 'w+') as outputFile:
+  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/results/Origins_of_the_American_Civil_War_vystup_extrakce.checked', 'w+') as outputFile:
+    #with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/ExtractedEntity/entity-non-page.check', 'r') as entitySourceFile:
+    with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/results/Origins_of_the_American_Civil_War_vystup_extrakce.entity', 'r') as entitySourceFile:
       for line in entitySourceFile:
         entity = re.search('([^\t]+)\t(http[^\t]+)\t([^\t]+)\t([^\n]+)',line)
         if not entity:
           continue
         entityName = entity.group(1)
         pageURL = entity.group(2)
-        entitySentence = entity.group(3)
-        interest = entity.group(4)
+        interest = entity.group(3)
+        entitySentence = entity.group(4)
         url = 'https://en.wikipedia.org/wiki/'+entityName.replace(' ','_')
         # find in db
         document = getDocument(es,url)
@@ -189,13 +192,20 @@ def checkURL():
           for item in entityName.split(' '):
             if '.' not in item:
               shorterName += item+' '
+          # TODO - otestovat druhou část podmínky
+          if shorterName[:-1].replace(' ','_') in url or len(re.findall(' ',shorterName[:-1])) < 2:
+            insertLink.checkedEntity += 1
+            outputFile.write(line)
+            continue
           url ='https://en.wikipedia.org/wiki/'+shorterName[:-1].replace(' ','_')
           #######################################################################
           # find in db
-          document = getDocument(es,url, outputFile, insertLink,entitySentence, interest)
+          document = getDocument(es,url)
           # checking
           if document['hits'].get('total') > 0:
             checkDocument(document, line, outputFile, insertLink,entitySentence, interest)
+          else:
+            outputFile.write(line)
           #######################################################################
 
         else:
@@ -208,11 +218,15 @@ def checkURL():
           print 'Prozatím vyfiltrováno: '+str(insertLink.filteredEntity)
           print 'Prozatím vloženo: '+str(insertLink.checkedEntity-insertLink.filteredEntity)
 
-        '''if insertLink.checkedEntity % 100000 == 0:
+        if insertLink.checkedEntity % 500000 == 0:
           print 'Prozatím zpracováno: '+str(insertLink.checkedEntity)
           print 'Prozatím vyfiltrováno: '+str(insertLink.filteredEntity)
           print 'Prozatím vloženo: '+str(insertLink.checkedEntity-insertLink.filteredEntity)
-          sys.exit(0)'''
+          sys.exit(0)
+  print 'Čas: '+strftime("%Y-%m-%d %H:%M:%S", gmtime())
+  print 'Prozatím zpracováno: '+str(insertLink.checkedEntity)
+  print 'Prozatím vyfiltrováno: '+str(insertLink.filteredEntity)
+  print 'Prozatím vloženo: '+str(insertLink.checkedEntity-insertLink.filteredEntity)
 
 ###############################################################
 # Method for check founded document from db and write output
@@ -238,14 +252,10 @@ def getDocument(es, url):
           "term":  { "url":url}},
 
       }
-  return es.search(index='xstejs24_extractor', doc_type='wikilinks', body=qbody)
+  return es.search(index='xstejs24_extractor', doc_type='wikilinks', body=qbody,request_timeout=30)
 
 # main
 if __name__ == "__main__":
-  # třída pro insert
-  insertLink = InsertClass()
-  es = Elasticsearch(host='athena1.fit.vutbr.cz', port=9200)
-  link = []
   print strftime("%Y-%m-%d %H:%M:%S", gmtime())
   #checkMultiThreadURL(insertLink.getFiles(), insertLink)
   checkURL()
@@ -269,11 +279,6 @@ if __name__ == "__main__":
       x += 1
       insertLink.checkedEntity += 1'''
 
-
-  print 'Vstupní počet entity: '+str(insertLink.checkedEntity)
-  print 'Vyfiltrováno z celého souboru: '+str(insertLink.filteredEntity)
-  print 'Vloženo: '+str(insertLink.checkedEntity-insertLink.filteredEntity)
-  print "Hotovo!"
 
   sys.exit(0)
 

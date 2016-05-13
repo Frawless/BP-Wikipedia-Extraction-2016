@@ -54,7 +54,7 @@ class PersonClass:
   ###############################################################
   # Method for delete duplicity
   ###############################################################
-  def deleteDuplicity(self,entity):
+  def deleteDuplicity(self,entity,extractorClass,noun):
     output = ""
     found = {}
     #loop over all found entity
@@ -65,23 +65,26 @@ class PersonClass:
       if item.group(1) in found:
         found[item.group(1)] += '|'+item.group(3)
       else:
-        found[item.group(1)] = item.group(2)+'\t'+item.group(3)
+        found[item.group(1)] = item.group(2)+'\t'+noun+'\t'+item.group(3)
 
     for key in found:
       output += key+'\t'+found[key]+'\n'
+      extractorClass.extractedEntityCount += 1
     # return statement
+
     return output
 
   ###############################################################
   # Method for extract persons from current page
   ###############################################################
   def getPersons(self,page, extractorClass):
-    names = []
+    names = extractorClass.pageURLs
     link = ""
     output = ""
     realName = ""
     parsedName = ""
     pageURL = ""
+    noun = ""
     set = False
     nextName = True
     writeFirstSentence = False
@@ -117,9 +120,16 @@ class PersonClass:
         if not re.search('\[([^\|]+\|V[^\|]+\|[^\]]+)\]',sentence):
           continue
         for item in sentence.split(" "):
+
           isName = re.search(r'\[\[[^\|]+\|([^\|]+)', item)
           if isName:
-            if isName.group(1) == "NP" or isName.group(1) == "GGG" or isName.group(1) == "POS" or isName.group(1) == "IN" and nextName:
+            # přidány závorky TODO
+            if isName.group(1) == "NP" or isName.group(1) == "NPS" or isName.group(1) == "GGG" or isName.group(1) == "POS" or isName.group(1) == "IN" and nextName:
+              # plural
+              if isName.group(1) == "NPS":
+                parsedName = ""
+                continue
+              # filter for apostrophe (Michael's..)
               if isName.group(1) == "POS":
                 parsedName = ""
                 nextName = False
@@ -128,16 +138,16 @@ class PersonClass:
               if tmp:
                 if tmp.group(1) is not "of" and isName.group(1) == "IN":
                   parsedName = ""
-                  nextName = False
+                  if parsedName is not '':
+                    nextName = False
                   continue
                 if not '.' in item and len(item) < 2:
                   parsedName = ""
                   nextName = False
                   continue
-
                 parsedName += item + " "
-                set = True
 
+                set = True
               if "entity=" in item:
                 entity = re.search(r'\|entity=(person|artist)', item)
                 if not entity:
@@ -150,7 +160,9 @@ class PersonClass:
                 if (len(re.findall('[A-Z][a-z]+', parsedName)) >= 1 and len(re.findall('\s',parsedName[:-1])) == 0) or (len(re.findall('[A-Z][a-z]+', parsedName)) > 1 and len(re.findall('\s',parsedName[:-1])) > 0):
                   if "URL=" in parsedName:
                     nextName = True
-                    names.append(re.sub(r'\|[^\]]+\]\]', '', parsedName).replace('[[', ''))
+                    parsedName = re.sub(r'\|[^\]]+\]\]', '', parsedName).replace('[[', '')[:-1]
+                    names.append(parsedName)
+                    #print names
                     parsedName = ""
                     continue
                   parsedName = re.sub(r'\|[^\]]+\]\]', '', parsedName).replace('[[', '')
@@ -178,22 +190,27 @@ class PersonClass:
                 if realName is not "" and self.compareNames(realName,names) and self.excludeEntityKind(realName):
                   #output += realName[:-1] + "\t" + pageURL + "\t" + re.sub(r'\|[^\]]+\]\]', '',sentence).replace('[[', '') + "\n"
                   # test pro věty s anotacemi
-                  output += realName[:-1] + "\t" + pageURL + "\t" + sentence + "\t"+noun+"\n"
+                  output += realName[:-1] + "\t" + pageURL + "\t" + sentence +"\n"
                   realName = ""
                   parsedName = ""
                   set = False
                 else:
                   realName = ""
+          # sentence switch
+        parsedName = ""
+
 
     # odstranění entity, které jsou referencovány na konci
     for line in output.split('\n'):
-      entity = re.search('[^\t]+\thttp[^\n]+\n',line)
-      if entity not in names:
-        finalOutput += line+'\n'
-        extractorClass.extractedEntityCount += 1
+      entity = re.search('([^\t]+)\thttp[^\n]+',line+'\n')
+      if entity:
+        #print entity.group(1)+'#'
+        if entity.group(1) not in names:
+          #print entity.group(1)+'#'
+          finalOutput += line+'\n'
 
     # return output -> maybe output[:-1] but in this case some entities are grouped together
-    return self.deleteDuplicity(finalOutput)
+    return self.deleteDuplicity(finalOutput,extractorClass,noun)
 
   ###############################################################
   # Method for compare entity name with entities with URL from current page

@@ -33,6 +33,7 @@ class Extract:
     self.wikiLinks = open(PathPrefix+'Wikilinks/' + socket.gethostname() + '.links', 'w+')
     self.outputFile = open(PathPrefix+'ExtractedEntity/' + socket.gethostname() + '-non-page.entity', 'w+')
     self.listOfNouns = self.createListOfNouns()
+    self.pageURLs = []
     # Extraction statistics
     self.startTime = time.time()
     self.executionTime = 0
@@ -44,6 +45,7 @@ class Extract:
   # Method for clear page
   ###############################################################
   def clearPage(self, page):
+    self.pageURLs = []
     pageTag = False
     parsedPage = ""
     page = page.split("\n")
@@ -71,7 +73,15 @@ class Extract:
       if not pageTag:
         tmp = re.search(r'^\d+\s+([^\s]+\s+[^\s]+\s+[^\s]+)',line)  # token + tag + lemma - can be modifed for another options
         tmpNertag = re.search(r'\d+\s+([^\s]+\s+){14}', line)  # LF nertag
-        tmpURL = re.search(r'\d+\s+([^\s]+\s+){9}', line)
+        tmpURL = re.search(r'\d+\s+([^\s]+\s+){9}', line)  # changd from 9 to 15 ?!!!
+        if not tmpURL:
+          tmpURL = re.search(r'\d+\s+([^\s]+\s+){15}', line)
+
+        pageURLs = re.search(r'\d+\s+([^\s]+\s+){15}', line)
+        if pageURLs:
+          if not re.search('0',pageURLs.group(1)):
+            self.pageURLs.append(pageURLs.group(1).replace('http://en.wikipedia.org/wiki/','').replace('_',' ').replace('\t',''))
+
         if tmpNertag and tmp and tmpURL:
           if "0" not in tmpNertag.group(1) and "0" not in tmpURL.group(1):
             parsedPage += "[[" + re.sub('\s+', '|', tmp.group(1)) + "|entity=" + tmpNertag.group(1)[:-1] + "|URL=" + tmpURL.group(1)[:-1] + "]] "
@@ -179,8 +189,10 @@ if __name__ == "__main__":
   id = 0
   extractor = Extract()
 
-  for filename in glob.glob(os.path.join('/mnt/data/indexes/wikipedia/enwiki-20150901/collPart*', '*.mg4j')):
-    file = open(filename, 'r')
+  #for filename in glob.glob(os.path.join('/mnt/data/indexes/wikipedia/enwiki-20150901/collPart*', '*.mg4j')):
+    #file = open(filename, 'r')
+
+  with open(PathPrefix+'Origins_of_the_American_Civil_War-athena5-parsed-page.page') as file:
     # getInformationFromPage(file,task_list)
     extractor.extractNames(file)
 

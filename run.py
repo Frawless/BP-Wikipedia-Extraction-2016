@@ -15,6 +15,8 @@ import os.path
 import re
 
 # mine imports
+from src import extractRedirects
+from src import fillElastic
 from src import checkElastic
 
 ###############################################################
@@ -195,37 +197,45 @@ if __name__ == "__main__":
   #parser.add_argument('-i', '--input', action="store", dest="input", help='Input file with information for verify')
   optionalArguments = parser.add_argument_group('optional arguments')
   parser.add_argument('-f', '--force', action="store_true", help='Re-write all extracted data by force')
-  parser.add_argument('-a', '--allentity', action="store_true", help='System will extract all entity from input')
+  parser.add_argument('-e', '--elastic', action="store_true", help='System will ubgrade elastic databse with extracted links')
   results = parser.parse_args()
 
   # connect to servers
   try:
+    # TODO - nastavit správně pro celkový systém!
     createFolders()  # create folders
 
-    if not os.path.exists(PathPrefix+'ExtractedEntity/entity-non-page.check') or results.force:
+    # Entity extract
+    '''if not os.path.exists(PathPrefix+'ExtractedEntity/entity-non-page.check') or results.force:
       print bcolors.WARNING + "Spouštím extrakci..."+bcolors.ENDC
       subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/extract.py ",shell=True)
-      print bcolors.OKGREEN + "Dokončena extrakce!"+bcolors.ENDC
+      print bcolors.OKGREEN + "Dokončena extrakce!"+bcolors.ENDC'''
 
-    '''if not os.path.exists(PathPrefix+'Wikilinks/all-wiki-links.aux') or results.force:
+    # Wikilinks concatenate
+    if not os.path.exists(PathPrefix+'Wikilinks/all-wiki-links.aux') or results.force:
       print bcolors.OKGREEN + "Spouštím tvorbu URL souboru..." + bcolors.ENDC
-      concatUrlFiles()'''
+      concatUrlFiles()
 
-    if not os.path.exists(PathPrefix+'ExtractedEntity/entity-non-page.check') or results.force:
+    # Redirects extract
+    '''if not os.path.exists(PathPrefix+'Wikilinks/redirectedLinks.redirect') or results.force:
+      print bcolors.OKGREEN + "Spouštím extrakci přesměrovaných odkazů..." + bcolors.ENDC
+      extractRedirects.findRedirects()'''
+
+    # Update elastic
+    '''if results.elastic:
+      print bcolors.OKGREEN + "Spouštím update databáze..." + bcolors.ENDC
+      fillElastic.insertData()'''
+
+    # Concat entity file
+    '''if not os.path.exists(PathPrefix+'ExtractedEntity/entity-non-page.check') or results.force:
       print bcolors.OKGREEN + "Spouštím tvorbu souboru s entitami..." + bcolors.ENDC
-      concatFiles()
+      concatFiles()'''
 
-    if not os.path.exists(PathPrefix+'CheckedLinks/entity-non-page.checked') or results.force:
+    # Check entity url
+    '''if not os.path.exists(PathPrefix+'CheckedLinks/entity-non-page.checked') or results.force:
       print bcolors.WARNING + "Spouštím kontrolu odkazů..."+bcolors.ENDC
       checkElastic.checkURL()
-      print bcolors.OKGREEN + "Kontrola dokončena."+bcolors.ENDC
-
-    # TODO - backup - původní verze
-    '''if not checkCheckedData(results.servers) or results.force:
-      print bcolors.WARNING + "Spouštím kontrolu odkazů..."+bcolors.ENDC
-      subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python3 /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/check-url.py ",shell=True)
-      print bcolors.OKGREEN + "Dokončena kontrola URL!" + bcolors.ENDC + bcolors.OKGREEN + "Spouštím tvorbu výsledného souboru..." + bcolors.ENDC
-      concatFiles()'''
+      print bcolors.OKGREEN + "Kontrola dokončena."+bcolors.ENDC'''
 
   except OSError as e:
     print bcolors.FAIL + "Execution failed:" + bcolors.ENDC + "", e

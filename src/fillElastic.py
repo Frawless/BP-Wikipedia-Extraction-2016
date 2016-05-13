@@ -74,8 +74,10 @@ class InsertClass:
     es.index(index=IDXPROJ, doc_type=DOCTYPE, id=socket.gethostname()+'-'+str(self.filteredEntity), body=inputLink)
     self.filteredEntity += 1'''
 
-# main
-if __name__ == "__main__":
+###############################################################
+# Method for insert data
+###############################################################
+def insertData():
   # nastavení databáze elastic search
   HOST        = 'athena1.fit.vutbr.cz'
   PORT        = 9200
@@ -102,7 +104,7 @@ if __name__ == "__main__":
 
   print 'Vkládám přesměrované odkazy...'
   # insert redirected
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/redirectedLinks.redirect') as linkFile:
+  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/Wikilinks/redirectedLinks.redirect') as linkFile:
     for line in linkFile:
       item = re.search('([^\t]+)\t([^\n]+)\n',line)
       link.append(item.group(1))
@@ -111,8 +113,10 @@ if __name__ == "__main__":
       insertLink.insertRedirects(link,es)
       link = []
 
-  # insert statistic
+# main
+if __name__ == "__main__":
 
-  print "Hotovo!"
+  insertData()
+  print "Done!"
 
   sys.exit(0)

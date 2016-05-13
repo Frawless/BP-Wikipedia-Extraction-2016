@@ -13,7 +13,7 @@ import extract
 
 MAX_PAGES = 3
 
-def getPage(file,page,extractedPages):
+def getPage(file,page,extractedPages,extractor):
   parsed = False
   output = ""
   for line in file:
@@ -25,9 +25,9 @@ def getPage(file,page,extractedPages):
         outputFile = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/' + pageName.replace(' ','_') + '-'+socket.gethostname()+'-parsed-page.page', 'w+')
         outputFile.write(output)
         outputFile.close()
-        output = extract.clearPage(output)
+        output = extractor.clearPage(output)
         outputFile = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/' + pageName.replace(' ','_') + '-clear-'+socket.gethostname()+'-parsed-page.page', 'w+')
-        outputFile.write(output)
+        outputFile.write(re.sub('\|[^\]]+\]\]','',output).replace('[[',''))
         outputFile.close()
         return extractedPages
         # TODO dodělat extrakci pouze jedné stránky
@@ -38,7 +38,6 @@ def getPage(file,page,extractedPages):
 
 if __name__ == "__main__":
   page = sys.argv[1]
-  print page
   allPages = False
   pureText = False
   if len(sys.argv) > 2:
@@ -47,10 +46,12 @@ if __name__ == "__main__":
     pureText = True
   extractedPages = 0
 
+  extractor = extract.Extract()
+
   # parsing data from servers
   for filename in glob.glob(os.path.join('/mnt/data/indexes/wikipedia/enwiki-20150901/collPart*', '*.mg4j')):
     file = open(filename, 'r')
-    extractedPages = getPage(file,page,extractedPages)
+    extractedPages = getPage(file,page,extractedPages,extractor)
 
     if extractedPages > MAX_PAGES:
       print "Zpracování více jak sto stran, ukončuji program..."
