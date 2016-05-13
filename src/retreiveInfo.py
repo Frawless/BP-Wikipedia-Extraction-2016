@@ -29,7 +29,6 @@ def getInfo(sentences,entity,url,interest):
     context = ''
     info = []
 
-    test = False
 
     # Split sentence into tokens
     for token in sentence.split(' '):
@@ -45,43 +44,33 @@ def getInfo(sentences,entity,url,interest):
           nextSubject = False
         # Token is end-of-senntence
         elif re.search('\.|\,', tokenData.group(4)) or writeData:
-          if 'manager' in subject:
-            test = True
-            print subject
+          tmpSubject = re.sub('\|[^\]]+\]\]','',subject[:-1]).replace('[[','')
           # Check if only sentence subject and entity is in subject, no predicate needed
-          if len(re.findall(' ',subject[:-1])) > len(re.findall(' ',entity)) and re.search(entity.replace('','.*')+'.*',subject):
+          if len(re.findall(' ',subject[:-1])) > len(re.findall(' ',entity)) and entity in tmpSubject:
             if (len(re.findall('NP',subject[:-1])) - entityHighLetters) < entityHighLetters:
               # Remove every spare text
-              subject = re.sub('\[\['+entity.replace(' ','.*')+'.*','',subject[:-1])
-              if 'manager' in subject:
-                print subject
+              subject = tmpSubject
 
               if re.search('^'+entity+'.*',subject):
                 subject = subject.replace(entity+' ','')
               # Subject must have few words after entity replace
               if subject is not '':
-                if 'manager' in subject:
-                  print subject
-                  print entity
-                  print 'XXXEntity:'+entity.replace(' ','_')+' is '+subject+'of '+url
                 # Present time
                 if re.search('former|actual|is|current',subject, re.IGNORECASE):
                   info.append('Entity:'+entity.replace(' ','_')+' is '+subject+'of '+url)   # Create information
                 # Previous time
                 else:
-                  if 'manager' in subject:
-                    print 'XXXEntity:'+entity.replace(' ','_')+' is '+subject+'of '+url
                   info.append('Entity:'+entity.replace(' ','_')+' was '+subject+'of '+url)  # Create information
-                  if 'manager' in subject:
-                    print info
           # False information
           #createInformation(subject, entity, url, info,entityHighLetters)
           # Check if system found all data for create structured info
-          if subject is not '' and gotPredicate and re.search(entity.replace('','.*'),subject+' '+context):
-            subject = re.sub('\[\['+entity.replace(' ','.*')+'.*','',subject[:-1])
+          if subject is not '' and gotPredicate and entity in tmpSubject:
+            subject = tmpSubject
             if re.search('^'+entity+'.*',subject):
-              subject = subject.replace(entity+' ','')
-            info.append('Entity:'+entity.replace(' ','_')+' '+subject+predicate+context[:-1]) # Create information
+              subject = ' '+subject.replace(entity,'')
+            if re.search('[A-Z]*|[a-z]*',subject):
+              subject = ''
+            info.append('Entity:'+entity.replace(' ','_')+subject+' '+predicate+context[:-1]) # Create information
           # Clear variables
           subject = ''
           predicate = ''
@@ -110,7 +99,6 @@ def getInfo(sentences,entity,url,interest):
 
     # Replace token follow on URL by URL
     for data in info:
-      print data
       for token in data.split(' '):
         token = re.sub('\|[^\]]+\]\]','',token.replace('[[',''))
         if token in url and len(token) > 3:
@@ -129,10 +117,12 @@ def getInfo(sentences,entity,url,interest):
 def createInformation(subject, entity, url, info,entityHighLetters):
   tmpSubject = re.sub('\|[^\]]+\]\]','',subject[:-1]).replace('[[','')
   # Check if only sentence subject and entity is in subject, no predicate needed
-  if len(re.findall(' ',subject[:-1])) > len(re.findall(' ',entity)) and re.search(entity.replace('','.*')+'.*',subject):
+  #if len(re.findall(' ',subject[:-1])) > len(re.findall(' ',entity)) and re.search(entity.replace('','.*')+'.*',subject):
+  if len(re.findall(' ',subject[:-1])) > len(re.findall(' ',entity)) and entity in tmpSubject:
     if (len(re.findall('NP',subject[:-1])) - entityHighLetters) < entityHighLetters:
       # Remove every spare text
-      subject = re.sub('\[\['+entity.replace(' ','.*')+'.*','',subject[:-1])
+      #subject = re.sub('\[\['+entity.replace(' ','.*')+'.*','',subject[:-1])
+      subject = tmpSubject
       if re.search('^'+entity+'.*',subject):
         subject = subject.replace(entity+' ','')
       # Subject must have few words after entity replace
