@@ -15,27 +15,18 @@ import os.path
 import re
 
 # Vlastní importy
-from src import retreiveInfo
 from src import extractRedirects
 from src import fillElastic
 from src import checkElastic
+from src import config
 
-###############################################################
-# Class for persone xtract
-###############################################################
-class PersonClass:
-  ###############################################################
-  # Class init
-  ###############################################################
-  def __init__(self, PathPrefix):
-      self.PathPrefix = PathPrefix
 
 ###############################################################
 # Constants
 ###############################################################
-PathPrefix = '/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'
-TRUE = 'true'
-FALSE = 'false'
+PATHPREFIX = config.CONF['path']
+TRUE = 'True'
+FALSE = 'False'
 
 ###############################################################
 # Class for terminal colors
@@ -66,8 +57,8 @@ def parseInput(tmp_input):
 ###############################################################
 def concatUrlFiles():
   lineCounter = 0
-  with open(PathPrefix+'Wikilinks/all-wiki-links.articles', 'w+') as outfile:
-     for filename in glob.glob(os.path.join(PathPrefix+'Wikilinks/', '*.links')):
+  with open(PATHPREFIX+ 'Wikilinks/all-wiki-links.articles', 'w+') as outfile:
+     for filename in glob.glob(os.path.join(PATHPREFIX+ 'Wikilinks/', '*.links')):
        with open(filename) as infile:
          for line in infile:
            lineCounter += 1
@@ -75,7 +66,7 @@ def concatUrlFiles():
   outfile.close()
   print bcolors.WARNING + "Mažu pomocné soubory..." + bcolors.ENDC
   # clearing *.tmp files
-  for file in glob.glob(PathPrefix+'Wikilinks/*.links'):
+  for file in glob.glob(PATHPREFIX+ 'Wikilinks/*.links'):
     os.remove(file)
   print bcolors.OKGREEN + "Soubor vytvořen!" + bcolors.ENDC
   print bcolors.OKGREEN + "Počet nalezených stránek: {}".format(lineCounter) + bcolors.ENDC
@@ -86,23 +77,23 @@ def concatUrlFiles():
 def concatFiles():
   lineCounter = 0
 
-  with open(PathPrefix+'ExtractedEntity/entity-non-page.check', 'w+') as outfile:
-   for filename in glob.glob(os.path.join(PathPrefix+'ExtractedEntity', '*.entity')):
+  with open(PATHPREFIX+ 'ExtractedEntity/entity-non-page.check', 'w+') as outfile:
+   for filename in glob.glob(os.path.join(PATHPREFIX+ 'ExtractedEntity', '*.entity')):
      with open(filename) as infile:
        for line in infile:
          lineCounter += 1
          outfile.write(line)
   outfile.close()
-  for file in glob.glob(PathPrefix+'ExtractedEntity/*.entity'):
+  for file in glob.glob(PATHPREFIX+ 'ExtractedEntity/*.entity'):
     os.remove(file)
 
-  with open(PathPrefix+'Statistic/statistic.stats', 'w+') as outfile:
-   for filename in glob.glob(os.path.join(PathPrefix+'Statistic', '*.tmp-stats')):
+  with open(PATHPREFIX+ 'Statistic/statistic.stats', 'w+') as outfile:
+   for filename in glob.glob(os.path.join(PATHPREFIX+ 'Statistic', '*.tmp-stats')):
      with open(filename) as infile:
        for line in infile:
          outfile.write(line)
   outfile.close()
-  for file in glob.glob(PathPrefix+'Statistic/*.tmp-stats'):
+  for file in glob.glob(PATHPREFIX+ 'Statistic/*.tmp-stats'):
     os.remove(file)
 
 
@@ -124,15 +115,15 @@ def splitCheckedEntity(servers):
       if serverName:
         fileNames.append(serverName.group(1))
 
-  with open(PathPrefix+'CheckedLinks/entity-non-page.checkedv2','r') as entityFile:
+  with open(PATHPREFIX+ 'CheckedLinks/entity-non-page.checkedv2', 'r') as entityFile:
     for line in entityFile:
       entityCounter += 1
 
     fileSize = entityCounter / 31 + 2000
 
   # TODO - nastavit správný vstup
-  with open(PathPrefix+'CheckedLinks/entity-non-page.checkedv2','r') as entityFile:
-    clusterFile = open(PathPrefix+'FinalInformation/'+fileNames[x]+'-extracted.info','w+')
+  with open(PATHPREFIX+'CheckedLinks/entity-non-page.checkedv2', 'r') as entityFile:
+    clusterFile = open(PATHPREFIX + 'FinalInformation/' + fileNames[x] + '-extracted.info', 'w+')
     for line in entityFile:
       clusterFile.write(line)
       cnt += 1
@@ -140,7 +131,7 @@ def splitCheckedEntity(servers):
         cnt = 0
         clusterFile.close()
         x += 1
-        clusterFile = open(PathPrefix+'FinalInformation/'+fileNames[x]+'-extracted.info','w+')
+        clusterFile = open(PATHPREFIX + 'FinalInformation/' + fileNames[x] + '-extracted.info', 'w+')
     clusterFile.close()
 
 ###############################################################
@@ -148,15 +139,15 @@ def splitCheckedEntity(servers):
 ###############################################################
 def reJoinInfoFiles():
   # joining final files
-  with open(PathPrefix+'FinalInformation/entity-non-page.extracted', 'w+') as outputFile:
-    for filename in glob.glob(os.path.join(PathPrefix+'FinalInformation/', '*.info-extracted')):
+  with open(PATHPREFIX+'FinalInformation/entity-non-page.extracted', 'w+') as outputFile:
+    for filename in glob.glob(os.path.join(PATHPREFIX+ 'FinalInformation/', '*.info-extracted')):
       with open(filename) as infile:
         for line in infile:
           outputFile.write(line)
   outputFile.close()
-  for file in glob.glob(PathPrefix+'FinalInformation/*.info-extracted'):
+  for file in glob.glob(PATHPREFIX+ 'FinalInformation/*.info-extracted'):
     os.remove(file)
-  for file in glob.glob(PathPrefix+'FinalInformation/*.info'):
+  for file in glob.glob(PATHPREFIX+ 'FinalInformation/*.info'):
     os.remove(file)
 
 
@@ -164,24 +155,24 @@ def reJoinInfoFiles():
 # Method for check create subfolders
 ###############################################################
 def createFolders():
-  if not os.path.exists(PathPrefix+'ExtractedEntity'):
+  if not os.path.exists(PATHPREFIX+ 'ExtractedEntity'):
     print ("Vytvářím složku: ExtractedEntity")
-    os.makedirs(PathPrefix+'ExtractedEntity')
-  if not os.path.exists(PathPrefix+'Wikilinks'):
+    os.makedirs(PATHPREFIX + 'ExtractedEntity')
+  if not os.path.exists(PATHPREFIX+ 'Wikilinks'):
     print ("Vytvářím složku: Wikilinks")
-    os.makedirs(PathPrefix+'Wikilinks')
-  if not os.path.exists(PathPrefix+'CheckedLinks'):
+    os.makedirs(PATHPREFIX + 'Wikilinks')
+  if not os.path.exists(PATHPREFIX+ 'CheckedLinks'):
     print ("Vytvářím složku: CheckedLinks")
-    os.makedirs(PathPrefix+'CheckedLinks')
-  if not os.path.exists(PathPrefix+'Deleted'):
+    os.makedirs(PATHPREFIX + 'CheckedLinks')
+  if not os.path.exists(PATHPREFIX+ 'Deleted'):
     print ("Vytvářím složku: Deleted")
-    os.makedirs(PathPrefix+'Deleted')
-  if not os.path.exists(PathPrefix+'Statistic'):
+    os.makedirs(PATHPREFIX + 'Deleted')
+  if not os.path.exists(PATHPREFIX+ 'Statistic'):
     print ("Vytvářím složku: Statistic")
-    os.makedirs(PathPrefix+'Statistic')
-  if not os.path.exists(PathPrefix+'FinalInformation'):
+    os.makedirs(PATHPREFIX + 'Statistic')
+  if not os.path.exists(PATHPREFIX+ 'FinalInformation'):
     print ("Vytvářím složku: FinalInformation")
-    os.makedirs(PathPrefix+'FinalInformation')
+    os.makedirs(PATHPREFIX + 'FinalInformation')
 
 ###############################################################
 # Method for check exists files (already extracted entity with system)
@@ -190,7 +181,7 @@ def checkExtractedData(servers):
   with open (servers) as serversFile:
     for server in serversFile:
       serverName = re.search('([^\.]+)\.fit\.vutbr\.cz',server).group(1)
-      if not os.path.exists(PathPrefix+'ExtractedEntity/'+serverName+'-non-page.entity'):
+      if not os.path.exists(PATHPREFIX+ 'ExtractedEntity/'+serverName+ '-non-page.entity'):
         return False
   return True
 
@@ -201,28 +192,29 @@ def checkCheckedData(servers):
   with open (servers) as serversFile:
     for server in serversFile:
       serverName = re.search('([^\.]+)\.fit\.vutbr\.cz',server).group(1)
-      if not os.path.exists(PathPrefix+'CheckedLinks/'+serverName+'.checked'):
+      if not os.path.exists(PATHPREFIX+ 'CheckedLinks/'+serverName+ '.checked'):
         return False
   return True
 
 ###############################################################
-# Method for start parallel shh and extraction on all machines
+# Method for parse arguments from config file and terminal
 ###############################################################
-def startExtraction(results):
-  if not checkExtractedData(results.servers) or results.force:
-    print bcolors.WARNING + "Spouštím extrakci..."+bcolors.ENDC
-    subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/extract.py ",shell=True)
-    print bcolors.OKGREEN + "Dokončena extrakce!"+bcolors.ENDC
+def parseArguments(results):
+  global PATHPREFIX
+  if results.path:
+    PATHPREFIX = results.path
+  if not results.servers:
+    results.servers = config.CONF['hosts']
+  if not results.force:
+    results.force = config.CONF['force']
+  if not results.update:
+    results.update = config.CONF['update']
+  if not results.redirects:
+    results.redirects = config.CONF['redirects']
+  if not results.check:
+    results.check = config.CONF['checkUrl']
 
-  if not os.path.exists(PathPrefix+'Wikilinks/all-wiki-links.aux') or results.force:
-    print bcolors.OKGREEN + "Spouštím tvorbu URL souboru..." + bcolors.ENDC
-    concatUrlFiles()
-
-  if not checkCheckedData(results.servers) or results.force:
-    print bcolors.WARNING + "Spouštím kontrolu odkazů..."+bcolors.ENDC
-    subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python3 /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/check-url.py ",shell=True)
-    print bcolors.OKGREEN + "Dokončena kontrola URL!" + bcolors.ENDC + bcolors.OKGREEN + "Spouštím tvorbu výsledného souboru..." + bcolors.ENDC
-    concatFiles()
+  return results
 
 ###############################################################
 # Main
@@ -231,63 +223,65 @@ if __name__ == "__main__":
   # parse arguments
   parser = argparse.ArgumentParser(description='Wiki extractor argument parser')
   requiredArguments = parser.add_argument_group('required arguments')
-  requiredArguments.add_argument('-s', '--servers', action="store", dest="servers", help='Add path to server list', required=True)
-  #parser.add_argument('-i', '--input', action="store", dest="input", help='Input file with information for verify')
+  #requiredArguments.add_argument('-s', '--servers', action="store", dest="servers", help='Add path to server list', required=True)
   optionalArguments = parser.add_argument_group('optional arguments')
-  parser.add_argument('-f', '--force', action="store_true", help='Re-write all extracted data by force')
-  parser.add_argument('-e', '--elastic', action="store_true", help='System will ubgrade elastic databse with extracted links')
-  parser.add_argument('-ch', '--check', action="store_true", help='System will check extracted entity articles')
-  parser.add_argument('-p', '--path', action="store_true", help='Path prefix for extraction data')
-  parser.add_argument('-u', '--update', action="store_true", help='System will update database with extracted links')
+  parser.add_argument('-s', '--servers', action="store", dest="servers", help='Add path to server list')
+  parser.add_argument('-f', '--force', action="store", dest="force", help='Re-write all extracted data by force')
+  parser.add_argument('-r', '--redirects', action="store", dest="redirects", help='System will extract redirect links')
+  parser.add_argument('-ch', '--check', action="store", dest="check", help='System will check extracted entity articles')
+  parser.add_argument('-p', '--path', action="store", dest="path", help='Path prefix for extraction data')
+  parser.add_argument('-u', '--update', action="store", dest="update", help='System will update database with extracted links')
   results = parser.parse_args()
 
+  results = parseArguments(results)
+  print results
+  print os.getcwd()
 
   # connect to servers
   try:
-    # TODO - nastavit správně pro celkový systém!
     createFolders()  # create folders
 
     # Entity extract
-    if not os.path.exists(PathPrefix+'ExtractedEntity/entity-non-page.check') or results.force is TRUE:
+    if not os.path.exists(PATHPREFIX+ 'ExtractedEntity/entity-non-page.check') or results.force is TRUE:
       print bcolors.WARNING + "Spouštím extrakci entit..."+bcolors.ENDC
-      subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/extract.py ",shell=True)
+      #subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python "+os.getcwd()+"/extract.py "+PATHPREFIX,shell=True)
       print bcolors.OKGREEN + "Dokončena extrakce entit!"+bcolors.ENDC
 
     # Wikilinks concatenate
-    if not os.path.exists(PathPrefix+'Wikilinks/all-wiki-links.articles') or results.force is TRUE:
+    if not os.path.exists(PATHPREFIX+ 'Wikilinks/all-wiki-links.articles') or results.force is TRUE:
       print bcolors.OKGREEN + "Spouštím tvorbu URL souboru..." + bcolors.ENDC
-      concatUrlFiles()
+      #concatUrlFiles()
 
     # Redirects extract
-    if not os.path.exists(PathPrefix+'Wikilinks/redirectedLinks.redirect') or results.force is TRUE:
+    if not os.path.exists(PATHPREFIX+ 'Wikilinks/redirectedLinks.redirect') or results.force is TRUE or results.redirects is TRUE:
       print bcolors.OKGREEN + "Spouštím extrakci přesměrovaných odkazů..." + bcolors.ENDC
-      extractRedirects.findRedirects()
+      #extractRedirects.findRedirects(PATHPREFIX)
 
     # Concat entity file
-    if not os.path.exists(PathPrefix+'ExtractedEntity/entity-non-page.check') or results.force is TRUE:
+    if not os.path.exists(PATHPREFIX+ 'ExtractedEntity/entity-non-page.check') or results.force is TRUE:
       print bcolors.OKGREEN + "Spouštím tvorbu souboru s entitami..." + bcolors.ENDC
-      concatFiles()
+      #concatFiles()
 
     # Update elastic
-    if results.elastic:
+    if results.force is TRUE or results.update is TRUE:
       print bcolors.OKGREEN + "Spouštím update databáze..." + bcolors.ENDC
-      fillElastic.insertData()
+      #fillElastic.insertData(PATHPREFIX)'''
 
     # Check entity url
-    '''if not os.path.exists(PathPrefix+'CheckedLinks/entity-non-page.checked') or results.force is TRUE:
+    if not os.path.exists(PATHPREFIX+'CheckedLinks/entity-non-page.checked') or results.force is TRUE or results.check is TRUE:
       print bcolors.WARNING + "Spouštím kontrolu odkazů..."+bcolors.ENDC
-      checkElastic.checkURL()
-      print bcolors.OKGREEN + "Kontrola dokončena."+bcolors.ENDC'''
+      #checkElastic.checkURL(PATHPREFIX)
+      print bcolors.OKGREEN + "Kontrola dokončena."+bcolors.ENDC
 
     # Extract information
-    '''if not os.path.exists(PathPrefix+'FinalInformation/entity-non-page.info') or results.force is TRUE:
+    if not os.path.exists(PATHPREFIX+'FinalInformation/entity-non-page.info') or results.force is TRUE:
       print bcolors.WARNING + "Spouštím extrakci informací..."+bcolors.ENDC
-      splitCheckedEntity(results.servers)
+      #splitCheckedEntity(results.servers)
       print bcolors.WARNING + "Rozděleny soubory, spuštím samotnou extrakci..."+bcolors.ENDC
-      subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python /mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/retreiveInfo.py ",shell=True)
+      #subprocess.call("parallel-ssh -t 0 -i -h " + results.servers + " -A python "+os.getcwd()+"/retreiveInfo.py "+PATHPREFIX+",shell=True)
       print bcolors.WARNING + "Spojuji soubory..."+bcolors.ENDC
-      reJoinInfoFiles()
-      print bcolors.OKGREEN + "Extrakce informací dokončena!"+bcolors.ENDC'''
+      #reJoinInfoFiles()
+      print bcolors.OKGREEN + "Extrakce informací dokončena!"+bcolors.ENDC
 
   except OSError as e:
     print bcolors.FAIL + "Execution failed:" + bcolors.ENDC + "", e

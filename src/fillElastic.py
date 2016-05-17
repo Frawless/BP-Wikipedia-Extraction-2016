@@ -16,7 +16,7 @@ from elasticsearch import Elasticsearch
 ###############################################################
 # Constants
 ###############################################################
-PathPrefix = '/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'
+#PathPrefix = '/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'
 
 class InsertClass:
   ###############################################################
@@ -61,7 +61,7 @@ class InsertClass:
   ###############################################################
   # Method for parse extraction file with stats
   ###############################################################
-  def parseStatsFile(self,es):
+  def parseStatsFile(self,es,PathPrefix):
     data = []
     x = 0
     data.append(x)
@@ -107,7 +107,7 @@ class InsertClass:
 ###############################################################
 # Method for insert data
 ###############################################################
-def insertData():
+def insertData(PathPrefix):
   # nastavení databáze elastic search
   HOST        = 'athena1.fit.vutbr.cz'
   PORT        = 9200
@@ -121,11 +121,11 @@ def insertData():
   # DB connect
   es = Elasticsearch(host=HOST, port=PORT)
   print 'Vkládám statistiky...'
-  insertLink.parseStatsFile(es)
+  insertLink.parseStatsFile(es,PathPrefix)
 
   print 'Vkládám současné odkazy...'
   # insert extracted links
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/Wikilinks/all-wiki-links.articles') as linkFile:
+  with open(PathPrefix+'Wikilinks/all-wiki-links.articles') as linkFile:
     for line in linkFile:
       item = re.search('([^\t]+)\t([^ ]+) ([^\n]+)\n',line)
       link.append(item.group(1))
@@ -137,7 +137,7 @@ def insertData():
 
   print 'Vkládám přesměrované odkazy...'
   # insert redirected
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/Wikilinks/redirectedLinks.redirect') as linkFile:
+  with open(PathPrefix+'Wikilinks/redirectedLinks.redirect') as linkFile:
     for line in linkFile:
       item = re.search('([^\t]+)\t([^\n]+)\n',line)
       link.append(item.group(1))

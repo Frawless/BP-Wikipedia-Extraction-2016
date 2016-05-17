@@ -8,13 +8,10 @@ import sys
 import re
 import socket
 
-
-
-
 ###############################################################
 # Constants
 ###############################################################
-PathPrefix = '/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'
+PathPrefix = sys.argv[1]
 
 ###############################################################
 # Method for extract information about extracted entity
@@ -144,13 +141,13 @@ def createInformation(subject, entity, url, info,entityHighLetters):
 def startInformationExtraction():
   cnt = 0
   # Output file
-  #if os.path.exists(PathPrefix+'FinalInformation/'+socket.gethostname()+'-extracted.info'):
+  #if os.path.exists(PATHPREFIX+'FinalInformation/'+socket.gethostname()+'-extracted.info'):
   if True:
     with open(PathPrefix+'FinalInformation/'+socket.gethostname()+'-extracted.info-extracted','w+') as outputFile:
       outputFile.write('Input: '+socket.gethostname()+'-extracted.info\n')
       # Input file
-      #with open(PathPrefix+'FinalInformation/'+socket.gethostname()+'-extracted.info','r') as inputFile:
-      with open(PathPrefix+'results/Origins_of_the_American_Civil_War_overene_odkazy.checked','r') as inputFile:
+      with open(PathPrefix+'FinalInformation/'+socket.gethostname()+'-extracted.info','r') as inputFile:
+      #with open(PathPrefix+'results/Origins_of_the_American_Civil_War_overene_odkazy.checked','r') as inputFile:
         for line in inputFile:
           # Get data from input file
           data = re.search('([^\t]+)\t([^\t]+)\t([^\t]+)\t([^\n]+)\n', line)

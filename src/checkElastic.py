@@ -17,46 +17,7 @@ from time import gmtime, strftime
 import xml.etree.ElementTree as ET
 from elasticsearch import Elasticsearch
 
-###############################################################
-# Threading class
-###############################################################
-class myThread (threading.Thread):
-  def __init__(self, name, threadID,insertLink):
-    threading.Thread.__init__(self)
-    self.threadID = threadID
-    self.name = name
-    self.insertLink = insertLink
-    self.es = Elasticsearch(host='athena1.fit.vutbr.cz', port=9200)
-  def run(self):
-    print 'Start thread'
-    checkURLwithRedirects(self.es,self.name,self.insertLink)
-    print 'End thread'
-
-###############################################################
-# Method for raise multiple-thread for entity checking
-###############################################################
-def checkMultiThreadURL(files,insert):
-  d = {}
-  counter = 0
-  # creating threads
-  while counter < len(files):
-    d[counter] = myThread(files[counter], counter,insert)
-    counter += 1
-
-  counter = 0
-  # starts threads
-  while counter < len(files):
-    d[counter].start()
-    counter += 1
-
-  counter = 0
-  # join threads
-  while counter < len(files):
-    d[counter].join()
-    counter += 1
-
 class InsertClass:
-  es = ''
   ###############################################################
   # Class init
   ###############################################################
@@ -64,23 +25,6 @@ class InsertClass:
       self.checkedEntity = 0
       self.filteredEntity = 0
       self.insertID = 0
-
-  ###############################################################
-  # Method for Elastic insert entity
-  ###############################################################
-  def insertEntity(self,entity, url, sentences, es):
-    appereance = '['
-    for item in sentences.split('|'):
-      appereance += '{"sentence": "'+item.replace('"','')+'"}, '
-
-    appereance = '{"sentences": '+appereance[:-2]+']}'
-    appereance = json.dumps(appereance)
-
-    # new input
-    inputLink = {'id': self.insertID,'host': socket.gethostname(), 'entity' : entity, 'url': url, 'doc': appereance}
-    # insert
-    es.index(index='xstejs24_extractor', doc_type='withoutURL', id=self.insertID, body=inputLink)
-    self.insertID += 1
 
   ###############################################################
   # Method for split entity files for more thread
@@ -116,16 +60,16 @@ def compareEntities(verb,noun,line, interest):
 ###############################################################
 # Method for check entity url with url in db
 ###############################################################
-def checkURL():
+def checkURL(PathPrefix):
   shorterName = ''
   # new class + db conects
   insertLink = InsertClass()
   es = Elasticsearch(host='athena1.fit.vutbr.cz', port=9200)
   # opening files
   # TODO - nastavit správně pro celkový systém!
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/CheckedLinks/entity-non-page.checked', 'w+') as outputFile:
+  with open(PathPrefix+'CheckedLinks/entity-non-page.checked', 'w+') as outputFile:
   #with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/results/Origins_of_the_American_Civil_War_vystup_extrakce.checked', 'w+') as outputFile:
-    with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/ExtractedEntity/entity-non-page.check', 'r') as entitySourceFile:
+    with open(PathPrefix+'ExtractedEntity/entity-non-page.check', 'r') as entitySourceFile:
     #with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/results/Origins_of_the_American_Civil_War_vystup_extrakce.entity', 'r') as entitySourceFile:
       for line in entitySourceFile:
         entity = re.search('([^\t]+)\t(http[^\t]+)\t([^\t]+)\t([^\n]+)',line)
@@ -163,21 +107,11 @@ def checkURL():
           outputFile.write(line)
 
         insertLink.checkedEntity += 1
-        if insertLink.checkedEntity % 1000 == 0:
+        if insertLink.checkedEntity % 1000000 == 0:
           print 'Čas: '+strftime("%Y-%m-%d %H:%M:%S", gmtime())
           print 'Prozatím zpracováno: '+str(insertLink.checkedEntity)
           print 'Prozatím vyfiltrováno: '+str(insertLink.filteredEntity)
           print 'Prozatím vloženo: '+str(insertLink.checkedEntity-insertLink.filteredEntity)
-
-        if insertLink.checkedEntity % 200000 == 0:
-          print 'Prozatím zpracováno: '+str(insertLink.checkedEntity)
-          print 'Prozatím vyfiltrováno: '+str(insertLink.filteredEntity)
-          print 'Prozatím vloženo: '+str(insertLink.checkedEntity-insertLink.filteredEntity)
-          sys.exit(0)
-  print 'Čas: '+strftime("%Y-%m-%d %H:%M:%S", gmtime())
-  print 'Prozatím zpracováno: '+str(insertLink.checkedEntity)
-  print 'Prozatím vyfiltrováno: '+str(insertLink.filteredEntity)
-  print 'Prozatím vloženo: '+str(insertLink.checkedEntity-insertLink.filteredEntity)
 
 ###############################################################
 # Method for check founded document from db and write output

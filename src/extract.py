@@ -18,11 +18,6 @@ import find
 import persons
 
 ###############################################################
-# Constants
-###############################################################
-PathPrefix = '/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'
-
-###############################################################
 # Extractor class
 ###############################################################
 class Extract:
@@ -30,8 +25,9 @@ class Extract:
   # Class init
   ###############################################################
   def __init__(self):
-    self.wikiLinks = open(PathPrefix+'Wikilinks/' + socket.gethostname() + '.links', 'w+')
-    self.outputFile = open(PathPrefix+'ExtractedEntity/' + socket.gethostname() + '-non-page.entity', 'w+')
+    self.PathPerfix = sys.argv[1]
+    self.wikiLinks = open(self.PathPrefix+'Wikilinks/' + socket.gethostname() + '.links', 'w+')
+    self.outputFile = open(self.PathPrefix+'ExtractedEntity/' + socket.gethostname() + '-non-page.entity', 'w+')
     self.listOfNouns = self.createListOfNouns()
     self.pageURLs = []
     # Extraction statistics
@@ -125,7 +121,7 @@ class Extract:
   ###############################################################
   def createListOfNouns(self):
     listOfNouns = []
-    file = open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/src/list_of_nouns', 'r')
+    file = open(self.PathPerfix+'/list_of_nouns', 'r')
     for line in file:
       listOfNouns.append(line[:-1])
     return listOfNouns
@@ -169,7 +165,7 @@ class Extract:
   # Method for print server extract stats
   ###############################################################
   def showStats(self):
-    with open(PathPrefix+'/Statistic/statistic'+self.host+'.tmp-stats', 'w+') as statsFile:
+    with open(self.PathPrefix+'/Statistic/statistic'+self.host+'.tmp-stats', 'w+') as statsFile:
       statsFile.write('###############################################################\n')
       statsFile.write('# Server:\t'+self.host+'\n')
       statsFile.write('# Execution time:\t'+str(self.executionTime)+' min\n')
@@ -181,7 +177,6 @@ class Extract:
 # Main
 ###############################################################
 if __name__ == "__main__":
-  #input = sys.argv[1]
   array = []
   outputTags = ""
   pagetitle = ""
@@ -192,7 +187,7 @@ if __name__ == "__main__":
   for filename in glob.glob(os.path.join('/mnt/data/indexes/wikipedia/enwiki-20150901/collPart*', '*.mg4j')):
     file = open(filename, 'r')
 
-  #with open(PathPrefix+'Origins_of_the_American_Civil_War-athena5-parsed-page.page') as file:
+  #with open(PATHPREFIX+'Origins_of_the_American_Civil_War-athena5-parsed-page.page') as file:
     # getInformationFromPage(file,task_list)
     extractor.extractNames(file)
 
