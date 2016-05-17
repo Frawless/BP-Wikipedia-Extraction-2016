@@ -189,10 +189,10 @@ if __name__ == "__main__":
   id = 0
   extractor = Extract()
 
-  #for filename in glob.glob(os.path.join('/mnt/data/indexes/wikipedia/enwiki-20150901/collPart*', '*.mg4j')):
-    #file = open(filename, 'r')
+  for filename in glob.glob(os.path.join('/mnt/data/indexes/wikipedia/enwiki-20150901/collPart*', '*.mg4j')):
+    file = open(filename, 'r')
 
-  with open(PathPrefix+'Origins_of_the_American_Civil_War-athena5-parsed-page.page') as file:
+  #with open(PathPrefix+'Origins_of_the_American_Civil_War-athena5-parsed-page.page') as file:
     # getInformationFromPage(file,task_list)
     extractor.extractNames(file)
 

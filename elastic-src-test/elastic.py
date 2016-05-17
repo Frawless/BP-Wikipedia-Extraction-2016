@@ -44,9 +44,9 @@ def createDB():
           'properties': {
               'id':             {'type':'string','index': 'not_analyzed'},
               'host':           {'type':'string','index': 'not_analyzed'},
-              'time':           {'type':'int','index': 'not_analyzed'},
-              'articles':       {'type':'int','index': 'not_analyzed'},
-              'entity':         {'type':'int','index': 'not_analyzed'},
+              'time':           {'type':'string','index': 'not_analyzed'},
+              'articles':       {'type':'string','index': 'not_analyzed'},
+              'entity':         {'type':'string','index': 'not_analyzed'},
           }
       },
       'extracted': {
@@ -54,17 +54,19 @@ def createDB():
               'id':               {'type':'string','index': 'not_analyzed'},
               'entity':           {'type':'string','index': 'not_analyzed'},
               'page':             {'type':'string','index': 'not_analyzed'},
-              'sentence':         {'type':'string','index': 'not_analyzed'},
+              'info':             {'type':'string','index': 'not_analyzed'},
           }
       }
   }
 
-  # smazání DB
+  # DB delete
   #es.indices.delete(index='xstejs24_extractor')
   #sys.exit(0)
+  #print 'Smazáno'
 
-  # create DB - jendou odkomenovat a pak už mít zakomenované při opakovaném spouštění
+  # create DB
   #es.indices.create(index='xstejs24_extractor',    body={'mappings': proj_mapping  })
+  #sys.exit(0)
 
   # new input
   delivData = {'id': '22', 'host': 'athena1', 'entity' : 'Donald J. Hornster', 'url': 'http-wiki', }
@@ -119,35 +121,6 @@ def createDB():
     print item.get('_source').get('entity')
     for tmp in item.get('_source').get('flags'):
       print item.get('_source').get('flags')'''
-
-
-  ###############################################################
-  # Method for Elastic insert entity
-  ###############################################################
-  def insertEntity(self,entity, url, sentences):
-    appereance = '['
-    # nastavení databáze elastic search
-    HOST        = 'athena1.fit.vutbr.cz'
-    PORT        = 9200
-    DOCTYPE     = 'extracted'
-    IDXPROJ     = 'xstejs24_extractor'
-
-    for item in sentences.split('|'):
-      appereance += '{"sentence": "'+item.replace('"','')+'"}, '
-
-    appereance = '{"sentences": '+appereance[:-2]+']}'
-    #print appereance
-    #appereance = json.loads(appereance)
-    appereance = json.dumps(appereance)
-
-    # DB connect
-    es = Elasticsearch(host=HOST, port=PORT)
-    # new input
-    inputLink = {'id': socket.gethostname()+'-'+str(self.entityID),'host': socket.gethostname(), 'entity' : entity, 'url': url, 'doc': appereance}
-    # insert
-    es.index(index=IDXPROJ, doc_type=DOCTYPE, id=socket.gethostname()+'-'+str(self.entityID), body=inputLink)
-    self.entityID += 1
-
 
 ###############################################################
 # Main

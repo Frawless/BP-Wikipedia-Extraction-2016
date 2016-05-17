@@ -13,6 +13,11 @@ import socket
 import xml.etree.ElementTree as ET
 from elasticsearch import Elasticsearch
 
+###############################################################
+# Constants
+###############################################################
+PathPrefix = '/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/'
+
 class InsertClass:
   ###############################################################
   # Class init
@@ -54,6 +59,31 @@ class InsertClass:
     self.linkID += 1
 
   ###############################################################
+  # Method for parse extraction file with stats
+  ###############################################################
+  def parseStatsFile(self,es):
+    data = []
+    x = 0
+    data.append(x)
+    with open(PathPrefix+'Statistic/statistic.stats') as statsFile:
+      for line in statsFile:
+        stats = re.search('([\d|\.]+)',line)
+        if 'Server:' in line and stats:
+          data.append(line.replace('# Server:\t','').replace('\n',''))
+        if 'Execution time:' in line and stats:
+          data.append(stats.group(1))
+        if 'Parsed Articles:' in line and stats:
+          data.append(stats.group(1))
+        if 'Extracted Entity:' in line and stats:
+          data.append(stats.group(1))
+        if len(data) > 4:
+          self.insertStats(data,es)
+          data = []
+          x += 1
+          data.append(x)
+
+
+  ###############################################################
   # Method for Elastic insert entity
   ###############################################################
   '''def insertEntity(self,entity, url, sentences):
@@ -90,9 +120,12 @@ def insertData():
 
   # DB connect
   es = Elasticsearch(host=HOST, port=PORT)
+  print 'Vkládám statistiky...'
+  insertLink.parseStatsFile(es)
+
   print 'Vkládám současné odkazy...'
   # insert extracted links
-  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/Wikilinks/all-wiki-links.aux') as linkFile:
+  with open('/mnt/minerva1/nlp/projects/ie_from_wikipedia7/servers_output/Wikilinks/all-wiki-links.articles') as linkFile:
     for line in linkFile:
       item = re.search('([^\t]+)\t([^ ]+) ([^\n]+)\n',line)
       link.append(item.group(1))
@@ -115,8 +148,6 @@ def insertData():
 
 # main
 if __name__ == "__main__":
-
   insertData()
   print "Done!"
-
   sys.exit(0)

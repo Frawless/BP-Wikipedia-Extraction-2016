@@ -163,7 +163,7 @@ def checkURL():
           outputFile.write(line)
 
         insertLink.checkedEntity += 1
-        if insertLink.checkedEntity % 100000 == 0:
+        if insertLink.checkedEntity % 1000 == 0:
           print 'Čas: '+strftime("%Y-%m-%d %H:%M:%S", gmtime())
           print 'Prozatím zpracováno: '+str(insertLink.checkedEntity)
           print 'Prozatím vyfiltrováno: '+str(insertLink.filteredEntity)
